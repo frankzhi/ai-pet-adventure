@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Pet, Task, AIResponse } from '../types';
 
-const DEEPSEEK_API_KEY = 'sk-8d09b60d4e0245e6b85b4ab503c0d5f7';
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-8d09b60d4e0245e6b85b4ab503c0d5f7';
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
 export class AIService {
