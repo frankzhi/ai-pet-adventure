@@ -1,14 +1,20 @@
 'use client'
 
+import { useState } from 'react'
 import { Task } from '../types'
-import { CheckCircle, Circle, Star, Clock, Gift } from 'lucide-react'
+import { CheckCircle, Circle, Star, Clock, Gift, MessageCircle, Timer, Activity } from 'lucide-react'
 
 interface TaskListProps {
   tasks: Task[]
-  onTaskComplete: (taskId: string) => void
+  onTaskComplete: (taskId: string, completionData?: any) => void
 }
 
 export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
+  const [timerDuration, setTimerDuration] = useState(0)
+  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null)
+  const [conversationInput, setConversationInput] = useState('')
+
   const getTaskTypeIcon = (type: string) => {
     switch (type) {
       case 'daily':
@@ -17,6 +23,10 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
         return <Star className="w-4 h-4 text-purple-500" />
       case 'special':
         return <Gift className="w-4 h-4 text-orange-500" />
+      case 'physical':
+        return <Activity className="w-4 h-4 text-green-500" />
+      case 'conversation':
+        return <MessageCircle className="w-4 h-4 text-indigo-500" />
       default:
         return <Circle className="w-4 h-4 text-gray-500" />
     }
@@ -30,6 +40,10 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
         return '剧情任务'
       case 'special':
         return '特殊任务'
+      case 'physical':
+        return '运动任务'
+      case 'conversation':
+        return '对话任务'
       default:
         return '未知任务'
     }
@@ -43,8 +57,132 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
         return 'bg-purple-100 text-purple-800'
       case 'special':
         return 'bg-orange-100 text-orange-800'
+      case 'physical':
+        return 'bg-green-100 text-green-800'
+      case 'conversation':
+        return 'bg-indigo-100 text-indigo-800'
       default:
         return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const handleTaskComplete = (taskId: string, completionData?: any) => {
+    try {
+      onTaskComplete(taskId, completionData)
+      setActiveTaskId(null)
+      setConversationInput('')
+      if (timerInterval) {
+        clearInterval(timerInterval)
+        setTimerInterval(null)
+      }
+      setTimerDuration(0)
+    } catch (error) {
+      console.error('完成任务失败:', error)
+    }
+  }
+
+  const startPhysicalTask = (task: Task) => {
+    setActiveTaskId(task.id)
+    // 这里可以添加实际的运动检测逻辑
+    // 目前只是模拟完成
+    setTimeout(() => {
+      handleTaskComplete(task.id, { completed: true })
+    }, 2000)
+  }
+
+  const startTimerTask = (task: Task) => {
+    if (!task.timerTask) return
+    
+    setActiveTaskId(task.id)
+    setTimerDuration(task.timerTask.duration)
+    
+    const interval = setInterval(() => {
+      setTimerDuration(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          setTimerInterval(null)
+          handleTaskComplete(task.id, { duration: task.timerTask!.duration })
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    
+    setTimerInterval(interval)
+  }
+
+  const handleConversationSubmit = (task: Task) => {
+    if (!conversationInput.trim()) return
+    
+    handleTaskComplete(task.id, { message: conversationInput })
+  }
+
+  const renderTaskCompletion = (task: Task) => {
+    if (activeTaskId !== task.id) {
+      return (
+        <button
+          onClick={() => {
+            switch (task.completionMethod) {
+              case 'physical':
+                startPhysicalTask(task)
+                break
+              case 'timer':
+                startTimerTask(task)
+                break
+              case 'conversation':
+                setActiveTaskId(task.id)
+                break
+              default:
+                handleTaskComplete(task.id)
+            }
+          }}
+          className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+        >
+          <CheckCircle className="w-4 h-4" />
+          <span>开始</span>
+        </button>
+      )
+    }
+
+    switch (task.completionMethod) {
+      case 'physical':
+        return (
+          <div className="ml-4 px-4 py-2 bg-yellow-600 text-white rounded-lg flex items-center space-x-2">
+            <Activity className="w-4 h-4 animate-pulse" />
+            <span>进行中...</span>
+          </div>
+        )
+      
+      case 'timer':
+        return (
+          <div className="ml-4 px-4 py-2 bg-yellow-600 text-white rounded-lg flex items-center space-x-2">
+            <Timer className="w-4 h-4" />
+            <span>{Math.floor(timerDuration / 60)}:{(timerDuration % 60).toString().padStart(2, '0')}</span>
+          </div>
+        )
+      
+      case 'conversation':
+        return (
+          <div className="ml-4 flex items-center space-x-2">
+            <input
+              type="text"
+              value={conversationInput}
+              onChange={(e) => setConversationInput(e.target.value)}
+              placeholder="输入对话内容..."
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyPress={(e) => e.key === 'Enter' && handleConversationSubmit(task)}
+            />
+            <button
+              onClick={() => handleConversationSubmit(task)}
+              className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              发送
+            </button>
+          </div>
+        )
+      
+      default:
+        return null
     }
   }
 
@@ -77,9 +215,41 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTaskTypeColor(task.type)}`}>
                         {getTaskTypeLabel(task.type)}
                       </span>
+                      {task.category && (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                          {task.category}
+                        </span>
+                      )}
                     </div>
                     <h5 className="font-medium text-gray-800 mb-2">{task.title}</h5>
                     <p className="text-gray-600 text-sm mb-3">{task.description}</p>
+                    
+                    {/* 任务详情 */}
+                    {task.physicalTask && (
+                      <div className="mb-3 p-3 bg-green-50 rounded-lg">
+                        <p className="text-sm text-green-700">
+                          <strong>运动任务:</strong> {task.physicalTask.action}
+                          {task.physicalTask.count && ` (${task.physicalTask.count}次)`}
+                          {task.physicalTask.duration && ` (${task.physicalTask.duration}秒)`}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {task.conversationTask && (
+                      <div className="mb-3 p-3 bg-indigo-50 rounded-lg">
+                        <p className="text-sm text-indigo-700">
+                          <strong>对话要求:</strong> 需要包含关键词: {task.conversationTask.requiredKeywords.join(', ')}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {task.timerTask && (
+                      <div className="mb-3 p-3 bg-yellow-50 rounded-lg">
+                        <p className="text-sm text-yellow-700">
+                          <strong>定时任务:</strong> {task.timerTask.description} ({task.timerTask.duration}秒)
+                        </p>
+                      </div>
+                    )}
                     
                     {/* 奖励信息 */}
                     <div className="flex items-center space-x-4 text-sm">
@@ -95,16 +265,22 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
                         <span className="text-red-500">💖</span>
                         <span className="text-gray-600">+{task.reward.health} 健康</span>
                       </div>
+                      {task.reward.energy !== undefined && (
+                        <div className="flex items-center space-x-1">
+                          <span className="text-blue-500">⚡</span>
+                          <span className="text-gray-600">+{task.reward.energy} 能量</span>
+                        </div>
+                      )}
+                      {task.reward.hunger !== undefined && (
+                        <div className="flex items-center space-x-1">
+                          <span className="text-orange-500">🍽️</span>
+                          <span className="text-gray-600">{task.reward.hunger > 0 ? '+' : ''}{task.reward.hunger} 饥饿</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
-                  <button
-                    onClick={() => onTaskComplete(task.id)}
-                    className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>完成</span>
-                  </button>
+                  {renderTaskCompletion(task)}
                 </div>
               </div>
             ))}

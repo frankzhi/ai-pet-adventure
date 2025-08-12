@@ -1,7 +1,7 @@
 'use client'
 
 import { Pet } from '../types'
-import { Heart, Zap, Coffee, Star, Crown } from 'lucide-react'
+import { Heart, Zap, Coffee, Star, Crown, Settings, Battery, Droplets, Leaf, Sparkles } from 'lucide-react'
 
 interface PetStatusProps {
   pet: Pet
@@ -22,6 +22,38 @@ export default function PetStatus({ pet }: PetStatusProps) {
     return 'bg-red-500'
   }
 
+  const getPetTypeIcon = (petType: string) => {
+    switch (petType) {
+      case 'robot':
+        return <Battery className="w-5 h-5 text-blue-500" />
+      case 'plant':
+        return <Leaf className="w-5 h-5 text-green-500" />
+      case 'food':
+        return <Coffee className="w-5 h-5 text-orange-500" />
+      case 'magical':
+        return <Sparkles className="w-5 h-5 text-purple-500" />
+      default:
+        return <Heart className="w-5 h-5 text-red-500" />
+    }
+  }
+
+  const getPetTypeLabel = (petType: string) => {
+    switch (petType) {
+      case 'robot':
+        return '机器人'
+      case 'plant':
+        return '植物'
+      case 'food':
+        return '食物'
+      case 'magical':
+        return '魔法生物'
+      case 'animal':
+        return '动物'
+      default:
+        return '未知'
+    }
+  }
+
   return (
     <div className="p-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -35,9 +67,34 @@ export default function PetStatus({ pet }: PetStatusProps) {
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2">{pet.name}</h3>
             <p className="text-gray-600 mb-1">{pet.type}</p>
+            
+            {/* 宠物类型 */}
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              {getPetTypeIcon(pet.petType)}
+              <span className="text-sm text-gray-600">{getPetTypeLabel(pet.petType)}</span>
+            </div>
+            
             <div className="flex items-center justify-center space-x-2">
               <Crown className="w-5 h-5 text-yellow-500" />
               <span className="text-lg font-medium text-gray-700">等级 {pet.level}</span>
+            </div>
+          </div>
+
+          {/* 特殊需求 */}
+          <div className="bg-blue-50 rounded-lg p-4">
+            <h4 className="font-medium text-gray-800 mb-3 flex items-center">
+              <Settings className="w-4 h-4 mr-2" />
+              特殊需求
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {pet.specialNeeds.map((need, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                >
+                  {need}
+                </span>
+              ))}
             </div>
           </div>
 
@@ -47,7 +104,7 @@ export default function PetStatus({ pet }: PetStatusProps) {
               {pet.characteristics.map((char, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                  className="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full"
                 >
                   {char}
                 </span>
