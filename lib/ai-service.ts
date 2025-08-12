@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Pet, Task, AIResponse } from '../types';
+import { ImageAnalysisResult } from './image-analysis';
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-8d09b60d4e0245e6b85b4ab503c0d5f7';
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
@@ -12,7 +13,7 @@ export class AIService {
         {
           model: 'deepseek-chat',
           messages,
-          temperature: 0.9,
+          temperature: 0.9, // 增加创造性
           max_tokens: 2000,
         },
         {
@@ -30,6 +31,75 @@ export class AIService {
     }
   }
 
+  static async generatePetFromImageAnalysis(
+    imageAnalysis: ImageAnalysisResult, 
+    genre?: string
+  ): Promise<Pet> {
+    const prompt = `你是一个创意作家，需要根据图像分析结果创建一个独特的电子宠物角色。
+
+图像分析结果：
+- 识别物体: ${imageAnalysis.objects.join(', ')}
+- 主要颜色: ${imageAnalysis.colors.join(', ')}
+- 详细描述: ${imageAnalysis.description}
+- 识别置信度: ${imageAnalysis.confidence}
+
+${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
+
+请基于上述图像分析结果，创建一个完整的宠物角色设定。宠物应该与识别出的物体、颜色和特征高度相关。
+
+请创建一个完整的宠物角色设定，包括：
+1. 世界设定（可以是科幻、奇幻、现实、神话等任何风格，但要与识别内容相关）
+2. 背景故事（宠物的来历、特殊能力等，要与识别出的物体和特征相关）
+3. 性格特征（3-5个关键词，体现识别物体的特点）
+4. 个性描述（一段话描述，要基于识别内容）
+
+请以JSON格式返回，格式如下：
+{
+  "name": "宠物名字",
+  "type": "宠物类型",
+  "worldSetting": "世界设定描述",
+  "background": "背景故事",
+  "characteristics": ["特征1", "特征2", "特征3"],
+  "personality": "个性描述"
+}
+
+重要：请确保宠物设定与图像分析结果高度相关，不要使用通用的描述。每个宠物都应该是独特的，基于识别出的具体内容。`;
+
+    const messages = [
+      { role: 'system', content: '你是一个创意作家，专门创作有趣的电子宠物角色设定。请确保每个角色都是独特的，基于图像分析的具体结果。' },
+      { role: 'user', content: prompt }
+    ];
+
+    try {
+      const response = await this.callDeepSeekAPI(messages);
+      const petData = JSON.parse(response);
+      
+      return {
+        id: Date.now().toString(),
+        name: petData.name,
+        type: petData.type,
+        image: '', // 图片URL将在后续处理
+        worldSetting: petData.worldSetting,
+        background: petData.background,
+        characteristics: petData.characteristics,
+        personality: petData.personality,
+        health: 100,
+        happiness: 100,
+        energy: 100,
+        hunger: 0,
+        level: 1,
+        experience: 0,
+        createdAt: new Date(),
+        lastInteraction: new Date(),
+        isAlive: true,
+      };
+    } catch (error) {
+      console.error('生成宠物设定失败:', error);
+      throw new Error('无法生成宠物设定');
+    }
+  }
+
+  // 保留原有方法以兼容性
   static async generatePetFromImage(imageDescription: string, genre?: string): Promise<Pet> {
     const prompt = `你是一个创意作家，需要根据用户提供的图片描述创建一个独特的电子宠物角色。
 

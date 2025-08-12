@@ -1,5 +1,6 @@
 import { Pet, Task, Conversation, GameState, AIResponse } from '../types';
 import { AIService } from './ai-service';
+import { ImageAnalysisService, ImageAnalysisResult } from './image-analysis';
 
 export class GameService {
   private static STORAGE_KEY = 'ai_pet_adventure_game_state';
@@ -42,6 +43,40 @@ export class GameService {
       localStorage.removeItem(this.STORAGE_KEY);
     } catch (error) {
       console.error('删除游戏状态失败:', error);
+    }
+  }
+
+  static async createNewPetFromImage(
+    imageFile: File, 
+    genre?: string
+  ): Promise<GameState> {
+    try {
+      // 第一步：图像分析
+      console.log('开始图像分析...');
+      const imageAnalysis = await ImageAnalysisService.analyzeImage(imageFile);
+      console.log('图像分析结果:', imageAnalysis);
+      
+      // 第二步：基于分析结果生成宠物
+      console.log('基于图像分析生成宠物...');
+      const pet = await AIService.generatePetFromImageAnalysis(imageAnalysis, genre);
+      
+      // 第三步：生成任务
+      console.log('生成日常任务...');
+      const tasks = await AIService.generateDailyTasks(pet);
+      
+      const gameState: GameState = {
+        pet,
+        tasks,
+        conversations: [],
+        currentStory: `欢迎来到${pet.name}的世界！${pet.worldSetting}`,
+        worldGenre: genre || '随机创意风格',
+      };
+
+      this.saveGameState(gameState);
+      return gameState;
+    } catch (error) {
+      console.error('创建新宠物失败:', error);
+      throw error;
     }
   }
 
