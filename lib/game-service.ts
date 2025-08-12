@@ -1,4 +1,4 @@
-import { Pet, Task, Conversation, GameState, AIResponse, TimerState } from '../types';
+import { Pet, Task, Conversation, GameState, AIResponse, TimerState, PetInteractionConfig, RandomEvent, ActivityLog } from '../types';
 import { AIService } from './ai-service';
 import { ImageAnalysisService, ImageAnalysisResult } from './image-analysis';
 
@@ -91,6 +91,9 @@ export class GameService {
           worldGenre: genre || '随机创意风格',
           lastPetInteraction: new Date(),
           activeTimers: [],
+          randomEvents: [],
+          activityLogs: [],
+          lastStatusUpdate: new Date(),
         };
       }
 
@@ -133,6 +136,9 @@ export class GameService {
           worldGenre: genre || '随机创意风格',
           lastPetInteraction: new Date(),
           activeTimers: [],
+          randomEvents: [],
+          activityLogs: [],
+          lastStatusUpdate: new Date(),
         };
       }
 
@@ -196,7 +202,7 @@ export class GameService {
     this.saveGameState(gameState);
   }
 
-  static getTimerProgress(taskId: string): { elapsed: number; remaining: number; isComplete: boolean } | null {
+  static getTimerProgress(taskId: string): { elapsed: number; remaining: number; isComplete: boolean; canComplete: boolean } | null {
     const gameState = this.loadGameState();
     if (!gameState) return null;
 
@@ -206,8 +212,12 @@ export class GameService {
     const elapsed = Date.now() - timer.startTime;
     const remaining = Math.max(0, timer.duration - elapsed);
     const isComplete = elapsed >= timer.duration;
+    
+    // 检查是否在完成窗口内（10分钟）
+    const completionWindow = 10 * 60 * 1000; // 10分钟
+    const canComplete = isComplete && (elapsed - timer.duration) <= completionWindow;
 
-    return { elapsed, remaining, isComplete };
+    return { elapsed, remaining, isComplete, canComplete };
   }
 
   static completeTimer(taskId: string): void {
@@ -230,6 +240,8 @@ export class GameService {
     gameState.activeTimers.forEach(timer => {
       const elapsed = now - timer.startTime;
       if (elapsed >= timer.duration) {
+        // 标记计时器完成，但不自动完成任务
+        timer.completedAt = now;
         completedTimers.push(timer.taskId);
       }
     });
@@ -276,6 +288,7 @@ export class GameService {
         role: 'assistant',
         content: aiResponse.content,
         timestamp: new Date(),
+        action: aiResponse.action, // 添加肢体动作
       };
 
       gameState.conversations.push(assistantMessage);
@@ -287,7 +300,7 @@ export class GameService {
       }
 
       // 检查是否需要生成特殊任务
-      if (Math.random() < 0.1) { // 10%概率生成特殊任务
+      if (Math.random() < 0.05) { // 降低到5%概率生成特殊任务
         try {
           const specialTask = await AIService.generateSpecialTask(
             activePet,
@@ -363,8 +376,12 @@ export class GameService {
         break;
       
       case 'timer':
-        if (completionData && completionData.duration >= (task.timerTask?.duration || 0)) {
+        const timerProgress = this.getTimerProgress(taskId);
+        if (timerProgress && timerProgress.canComplete) {
           canComplete = true;
+        } else if (timerProgress && timerProgress.isComplete) {
+          failureReason = '计时任务已完成，但超出完成窗口时间';
+          hint = '请在计时结束后10分钟内点击完成';
         } else {
           failureReason = '计时任务时间不足';
           hint = `请等待${task.timerTask?.duration || 0}秒完成`;
@@ -415,7 +432,7 @@ export class GameService {
     };
   }
 
-  // 宠物主动互动
+  // 宠物主动互动 - 大幅降低频率
   static async checkPetInitiatedInteraction(): Promise<string | null> {
     const gameState = this.loadGameState();
     if (!gameState) return null;
@@ -425,28 +442,39 @@ export class GameService {
 
     const now = new Date();
     const lastInteraction = new Date(gameState.lastPetInteraction);
-    const minutesSinceLastInteraction = (now.getTime() - lastInteraction.getTime()) / (1000 * 60);
+    const hoursSinceLastInteraction = (now.getTime() - lastInteraction.getTime()) / (1000 * 60 * 60);
 
-    // 检查是否应该主动互动（5-15分钟间隔）
-    if (minutesSinceLastInteraction < 5) return null;
+    // 根据性格类型调整互动频率
+    const personalityConfig = this.getPersonalityInteractionConfig(activePet.personalityType);
+    
+    // 某些性格的宠物完全不主动互动
+    if (!personalityConfig.canInitiate) {
+      return null;
+    }
+
+    // 检查是否应该主动互动（调整为小时级别）
+    const minInterval = personalityConfig.minInterval * personalityConfig.personalityMultiplier;
+    const maxInterval = personalityConfig.maxInterval * personalityConfig.personalityMultiplier;
+    
+    if (hoursSinceLastInteraction < minInterval) return null;
 
     // 根据宠物状态决定是否主动互动
     let shouldInitiate = false;
     let reason = '';
 
-    if (activePet.happiness < 30) {
+    if (activePet.happiness < 20) {
       shouldInitiate = true;
       reason = '感到孤独，想要陪伴';
-    } else if (activePet.hunger < 30) { // 饱食度低
+    } else if (activePet.hunger < 20) { // 饱食度低
       shouldInitiate = true;
       reason = '感到饥饿，需要食物';
-    } else if (activePet.energy < 20) {
+    } else if (activePet.energy < 10) {
       shouldInitiate = true;
       reason = '感到疲惫，需要休息';
-    } else if (activePet.health < 50) {
+    } else if (activePet.health < 30) {
       shouldInitiate = true;
       reason = '感到不适，需要照顾';
-    } else if (Math.random() < 0.3) { // 30%概率随机主动互动
+    } else if (Math.random() < 0.1) { // 降低到10%概率随机主动互动
       shouldInitiate = true;
       reason = '想要和主人分享一些有趣的事情';
     }
@@ -478,50 +506,229 @@ export class GameService {
     return null;
   }
 
-  static resetDailyTasks(): void {
-    const gameState = this.loadGameState();
-    if (!gameState) return;
+  // 获取性格互动配置
+  private static getPersonalityInteractionConfig(personalityType: string): PetInteractionConfig {
+    const configs = {
+      extroverted: {
+        minInterval: 2, // 2小时
+        maxInterval: 6, // 6小时
+        personalityMultiplier: 0.5, // 外向的宠物互动更频繁
+        canInitiate: true,
+        conditions: {
+          lowHappiness: true,
+          lowHealth: true,
+          lowEnergy: true,
+          highHunger: true,
+        },
+      },
+      introverted: {
+        minInterval: 8, // 8小时
+        maxInterval: 24, // 24小时
+        personalityMultiplier: 2, // 内向的宠物互动更少
+        canInitiate: true,
+        conditions: {
+          lowHappiness: true,
+          lowHealth: true,
+          lowEnergy: false,
+          highHunger: true,
+        },
+      },
+      calm: {
+        minInterval: 4, // 4小时
+        maxInterval: 12, // 12小时
+        personalityMultiplier: 1,
+        canInitiate: true,
+        conditions: {
+          lowHappiness: false,
+          lowHealth: true,
+          lowEnergy: false,
+          highHunger: true,
+        },
+      },
+      energetic: {
+        minInterval: 3, // 3小时
+        maxInterval: 8, // 8小时
+        personalityMultiplier: 0.7,
+        canInitiate: true,
+        conditions: {
+          lowHappiness: true,
+          lowHealth: true,
+          lowEnergy: true,
+          highHunger: true,
+        },
+      },
+      mysterious: {
+        minInterval: 12, // 12小时
+        maxInterval: 48, // 48小时
+        personalityMultiplier: 3,
+        canInitiate: false, // 神秘的宠物不主动互动
+        conditions: {
+          lowHappiness: false,
+          lowHealth: false,
+          lowEnergy: false,
+          highHunger: false,
+        },
+      },
+      friendly: {
+        minInterval: 3, // 3小时
+        maxInterval: 8, // 8小时
+        personalityMultiplier: 0.8,
+        canInitiate: true,
+        conditions: {
+          lowHappiness: true,
+          lowHealth: true,
+          lowEnergy: false,
+          highHunger: true,
+        },
+      },
+      aloof: {
+        minInterval: 24, // 24小时
+        maxInterval: 72, // 72小时
+        personalityMultiplier: 4,
+        canInitiate: false, // 冷漠的宠物不主动互动
+        conditions: {
+          lowHappiness: false,
+          lowHealth: false,
+          lowEnergy: false,
+          highHunger: false,
+        },
+      },
+      playful: {
+        minInterval: 2, // 2小时
+        maxInterval: 6, // 6小时
+        personalityMultiplier: 0.6,
+        canInitiate: true,
+        conditions: {
+          lowHappiness: true,
+          lowHealth: true,
+          lowEnergy: true,
+          highHunger: true,
+        },
+      },
+    };
 
-    const activePet = this.getActivePet();
-    if (!activePet) return;
-
-    // 重置日常任务
-    gameState.tasks = gameState.tasks.filter(task => task.type !== 'daily');
-    
-    // 生成新的日常任务
-    AIService.generateDailyTasks(activePet).then(newTasks => {
-      gameState.tasks.push(...newTasks);
-      this.saveGameState(gameState);
-    }).catch(error => {
-      console.error('重置日常任务失败:', error);
-    });
+    return configs[personalityType as keyof typeof configs] || configs.friendly;
   }
 
-  static updatePetStatus(): void {
+  // 生成随机事件
+  static generateRandomEvent(pet: Pet): RandomEvent | null {
+    const now = new Date();
+    const lastUpdate = new Date(pet.lastActivityUpdate);
+    const hoursSinceLastUpdate = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
+
+    // 每4-8小时生成一个随机事件
+    if (hoursSinceLastUpdate < 4) return null;
+
+    const events = [
+      {
+        type: 'positive' as const,
+        title: '发现宝藏',
+        description: `${pet.name}在探索时发现了一个小宝藏！`,
+        effect: { happiness: 10, experience: 5 }
+      },
+      {
+        type: 'positive' as const,
+        title: '遇到朋友',
+        description: `${pet.name}遇到了一个友好的小伙伴，一起玩耍很开心！`,
+        effect: { happiness: 15, energy: -5 }
+      },
+      {
+        type: 'negative' as const,
+        title: '遇到小麻烦',
+        description: `${pet.name}遇到了一点小麻烦，但很快就解决了。`,
+        effect: { happiness: -5, experience: 3 }
+      },
+      {
+        type: 'neutral' as const,
+        title: '天气变化',
+        description: `天气发生了变化，${pet.name}适应得很好。`,
+        effect: { energy: -3, health: 2 }
+      }
+    ];
+
+    const event = events[Math.floor(Math.random() * events.length)];
+    
+    return {
+      id: Date.now().toString(),
+      type: event.type,
+      title: event.title,
+      description: event.description,
+      effect: event.effect,
+      timestamp: new Date(),
+      isRead: false,
+    };
+  }
+
+  // 更新宠物状态和活动
+  static async updatePetStatus(): Promise<void> {
     const gameState = this.loadGameState();
     if (!gameState) return;
 
     const now = new Date();
     
     // 更新所有宠物的状态
-    gameState.pets.forEach(pet => {
+    for (const pet of gameState.pets) {
       const lastInteraction = new Date(pet.lastInteraction);
       const hoursSinceLastInteraction = (now.getTime() - lastInteraction.getTime()) / (1000 * 60 * 60);
 
-      // 根据时间流逝更新状态
-      if (hoursSinceLastInteraction > 1) {
-        pet.hunger = Math.max(0, pet.hunger - hoursSinceLastInteraction * 5); // 饱食度减少
-        pet.energy = Math.max(0, pet.energy - hoursSinceLastInteraction * 2);
-        pet.happiness = Math.max(0, pet.happiness - hoursSinceLastInteraction * 1);
+      // 根据时间流逝更新状态（降低更新频率）
+      if (hoursSinceLastInteraction > 2) {
+        pet.hunger = Math.max(0, pet.hunger - hoursSinceLastInteraction * 2); // 饱食度减少
+        pet.energy = Math.max(0, pet.energy - hoursSinceLastInteraction * 1);
+        pet.happiness = Math.max(0, pet.happiness - hoursSinceLastInteraction * 0.5);
       }
+
+      // 更新心情
+      if (pet.happiness < 30) pet.mood = 'sad';
+      else if (pet.happiness < 60) pet.mood = 'neutral';
+      else if (pet.energy < 30) pet.mood = 'tired';
+      else if (pet.hunger < 30) pet.mood = 'hungry';
+      else if (pet.happiness > 80) pet.mood = 'happy';
+      else pet.mood = 'neutral';
 
       // 检查宠物是否死亡
       if (pet.health <= 0 || pet.happiness <= 0) {
         pet.isAlive = false;
         gameState.currentStory += `\n💔 ${pet.name}因为缺乏照顾而离开了...`;
       }
-    });
 
+      // 生成随机事件
+      const randomEvent = this.generateRandomEvent(pet);
+      if (randomEvent) {
+        gameState.randomEvents.push(randomEvent);
+        
+        // 应用事件效果
+        if (randomEvent.effect.happiness) pet.happiness = Math.min(100, Math.max(0, pet.happiness + randomEvent.effect.happiness));
+        if (randomEvent.effect.health) pet.health = Math.min(100, Math.max(0, pet.health + randomEvent.effect.health));
+        if (randomEvent.effect.energy) pet.energy = Math.min(100, Math.max(0, pet.energy + randomEvent.effect.energy));
+        if (randomEvent.effect.hunger) pet.hunger = Math.min(100, Math.max(0, pet.hunger + randomEvent.effect.hunger));
+        if (randomEvent.effect.experience) pet.experience += randomEvent.effect.experience;
+      }
+
+      // 更新宠物活动
+      const lastActivityUpdate = new Date(pet.lastActivityUpdate);
+      const hoursSinceActivityUpdate = (now.getTime() - lastActivityUpdate.getTime()) / (1000 * 60 * 60);
+      
+      if (hoursSinceActivityUpdate > 1) {
+        try {
+          const newActivity = await AIService.generatePetActivity(pet);
+          pet.currentActivity = newActivity;
+          pet.lastActivityUpdate = new Date();
+          
+          // 记录活动日志
+          gameState.activityLogs.push({
+            id: Date.now().toString(),
+            activity: newActivity,
+            timestamp: new Date(),
+            type: 'action',
+          });
+        } catch (error) {
+          console.error('更新宠物活动失败:', error);
+        }
+      }
+    }
+
+    gameState.lastStatusUpdate = new Date();
     this.saveGameState(gameState);
   }
 
@@ -552,5 +759,26 @@ export class GameService {
   static getActiveTimers(): TimerState[] {
     const gameState = this.loadGameState();
     return gameState?.activeTimers || [];
+  }
+
+  static getRandomEvents(): RandomEvent[] {
+    const gameState = this.loadGameState();
+    return gameState?.randomEvents || [];
+  }
+
+  static getActivityLogs(): ActivityLog[] {
+    const gameState = this.loadGameState();
+    return gameState?.activityLogs || [];
+  }
+
+  static markEventAsRead(eventId: string): void {
+    const gameState = this.loadGameState();
+    if (!gameState) return;
+
+    const event = gameState.randomEvents.find(e => e.id === eventId);
+    if (event) {
+      event.isRead = true;
+      this.saveGameState(gameState);
+    }
   }
 } 

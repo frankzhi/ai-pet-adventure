@@ -174,6 +174,9 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         petType,
         specialNeeds,
         personalityType,
+        currentActivity: '正在适应新环境...',
+        lastActivityUpdate: new Date(),
+        mood: 'happy',
       };
     } catch (error) {
       console.error('生成宠物设定失败:', error);
@@ -250,6 +253,9 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         petType,
         specialNeeds,
         personalityType,
+        currentActivity: '正在适应新环境...',
+        lastActivityUpdate: new Date(),
+        mood: 'happy',
       };
     } catch (error) {
       console.error('生成宠物设定失败:', error);
@@ -306,7 +312,8 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
     "timerTask": {
       "duration": 300,
       "description": "保持站立5分钟"
-    }
+    },
+    "timerCompletionWindow": 10
   }
 ]`;
 
@@ -332,6 +339,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         physicalTask: taskData.physicalTask,
         conversationTask: taskData.conversationTask,
         timerTask: taskData.timerTask,
+        timerCompletionWindow: taskData.timerCompletionWindow || 10, // 默认10分钟完成窗口
       }));
     } catch (error) {
       console.error('生成日常任务失败:', error);
@@ -355,6 +363,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         reward: { experience: 10, happiness: 15, health: 10, energy: 20, hunger: -5 },
         isCompleted: false,
         createdAt: new Date(),
+        timerCompletionWindow: 10,
       });
     } else if (pet.petType === 'plant') {
       tasks.push({
@@ -367,6 +376,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         reward: { experience: 10, happiness: 15, health: 10, energy: 5, hunger: -5 },
         isCompleted: false,
         createdAt: new Date(),
+        timerCompletionWindow: 10,
       });
     } else {
       tasks.push({
@@ -379,6 +389,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         reward: { experience: 10, happiness: 15, health: 10, energy: 5, hunger: -15 },
         isCompleted: false,
         createdAt: new Date(),
+        timerCompletionWindow: 10,
       });
     }
 
@@ -397,6 +408,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         requiredKeywords: ['喜欢', '开心'],
         requiredResponse: '情感表达'
       },
+      timerCompletionWindow: 10,
     });
 
     // 添加运动任务
@@ -415,6 +427,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         duration: 60,
         count: 10
       },
+      timerCompletionWindow: 10,
     });
 
     return tasks;
@@ -447,6 +460,8 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
 - 快乐: ${pet.happiness}%
 - 能量: ${pet.energy}%
 - 饱食度: ${pet.hunger}%
+- 心情: ${pet.mood}
+- 当前活动: ${pet.currentActivity}
 
 对话历史：
 ${conversationHistory}
@@ -455,45 +470,86 @@ ${conversationHistory}
 
 请以${pet.name}的身份回应，保持角色设定的一致性。回应要自然、有趣，符合宠物的性格特点。
 
-性格类型指导：
-- extroverted: 话多、热情、喜欢分享
-- introverted: 话少、简洁、喜欢独处
-- calm: 冷静、理性、沉稳
-- energetic: 活力充沛、好动、热情
-- mysterious: 神秘、高冷、深不可测
-- friendly: 友善、温和、容易亲近
-- aloof: 冷漠、疏远、难以接近
-- playful: 爱玩、调皮、有趣
+重要要求：
+1. 根据性格类型调整回应的长度和语气
+2. 内向的宠物应该话少，外向的宠物可以话多
+3. 在回应中描述宠物的肢体动作，让互动更有代入感
+4. 不要主动发起新的对话，只回应用户的输入
 
-请根据性格类型调整回应的长度和语气。内向的宠物应该话少，外向的宠物可以话多。
+性格类型指导：
+- extroverted: 话多、热情、喜欢分享，会有很多肢体动作
+- introverted: 话少、简洁、喜欢独处，动作比较含蓄
+- calm: 冷静、理性、沉稳，动作从容
+- energetic: 活力充沛、好动、热情，动作活跃
+- mysterious: 神秘、高冷、深不可测，动作优雅神秘
+- friendly: 友善、温和、容易亲近，动作温暖
+- aloof: 冷漠、疏远、难以接近，动作冷淡
+- playful: 爱玩、调皮、有趣，动作活泼
+
+请以JSON格式返回，包含回应内容和肢体动作：
+{
+  "content": "回应内容",
+  "action": "肢体动作描述"
+}
 
 如果用户完成了某个任务，请给予适当的奖励和鼓励。
-如果宠物的状态较低，可以在回应中表达相应的情绪。
-
-请直接返回回应内容，不要包含任何格式标记。`;
+如果宠物的状态较低，可以在回应中表达相应的情绪。`;
 
     const messages = [
-      { role: 'system', content: `你是${pet.name}，一个${pet.type}。请始终保持角色设定的一致性，不要打破角色。根据性格类型调整回应风格。` },
+      { role: 'system', content: `你是${pet.name}，一个${pet.type}。请始终保持角色设定的一致性，不要打破角色。根据性格类型调整回应风格，并描述肢体动作。` },
       { role: 'user', content: prompt }
     ];
 
     try {
       const response = await this.callDeepSeekAPI(messages);
+      let aiResponse: AIResponse;
+      
+      try {
+        // 尝试解析JSON格式
+        const parsedResponse = JSON.parse(response);
+        aiResponse = {
+          content: parsedResponse.content,
+          action: parsedResponse.action,
+        };
+      } catch {
+        // 如果不是JSON格式，直接使用文本
+        aiResponse = {
+          content: response,
+          action: this.generateDefaultAction(pet, message),
+        };
+      }
       
       // 分析是否需要更新宠物状态
-      const statusUpdate = this.analyzeStatusUpdate(message, response, pet);
+      const statusUpdate = this.analyzeStatusUpdate(message, aiResponse.content, pet);
+      if (statusUpdate) {
+        aiResponse.petStatus = statusUpdate;
+      }
       
-      return {
-        content: response,
-        petStatus: statusUpdate,
-        shouldPetInitiate: Math.random() < 0.3, // 30%概率宠物主动互动
-      };
+      return aiResponse;
     } catch (error) {
       console.error('生成故事回应失败:', error);
       return {
         content: `${pet.name}似乎有点困惑，但还是努力回应着...`,
+        action: this.generateDefaultAction(pet, message),
       };
     }
+  }
+
+  // 生成默认肢体动作
+  private static generateDefaultAction(pet: Pet, message: string): string {
+    const actions = {
+      extroverted: ['兴奋地摇着尾巴', '开心地蹦蹦跳跳', '热情地靠近你'],
+      introverted: ['轻轻地点点头', '害羞地低下头', '安静地看着你'],
+      calm: ['平静地注视着你', '优雅地调整姿势', '沉稳地回应'],
+      energetic: ['活力四射地转圈', '兴奋地挥舞着', '充满活力地回应'],
+      mysterious: ['神秘地闪烁着', '优雅地摆动着', '深不可测地看着你'],
+      friendly: ['友善地微笑着', '温暖地靠近', '温柔地回应'],
+      aloof: ['冷淡地瞥了一眼', '疏远地保持距离', '冷漠地回应'],
+      playful: ['调皮地眨眨眼', '欢快地玩耍着', '有趣地回应'],
+    };
+    
+    const petActions = actions[pet.personalityType] || actions.friendly;
+    return petActions[Math.floor(Math.random() * petActions.length)];
   }
 
   private static analyzeStatusUpdate(userMessage: string, aiResponse: string, pet: Pet): Partial<Pet> | undefined {
@@ -523,6 +579,7 @@ ${conversationHistory}
     // 分析AI回应中的情感表达
     if (aiResponse.includes('开心') || aiResponse.includes('高兴') || aiResponse.includes('快乐')) {
       statusUpdate.happiness = Math.min(100, pet.happiness + 5);
+      statusUpdate.mood = 'happy';
       hasUpdate = true;
     }
 
@@ -584,6 +641,7 @@ ${conversationHistory}
         reward: taskData.reward,
         isCompleted: false,
         createdAt: new Date(),
+        timerCompletionWindow: 10,
       };
     } catch (error) {
       console.error('生成特殊任务失败:', error);
@@ -591,7 +649,7 @@ ${conversationHistory}
     }
   }
 
-  // 宠物主动互动
+  // 宠物主动互动 - 大幅降低频率
   static async generatePetInitiatedInteraction(
     pet: Pet,
     reason: string
@@ -615,6 +673,12 @@ ${conversationHistory}
 
 请以${pet.name}的身份主动发起对话，表达你的需求、感受或想法。对话要自然、符合角色设定，不要过于突兀。
 
+重要要求：
+1. 根据性格类型调整对话的长度和语气
+2. 内向的宠物应该话少，外向的宠物可以话多
+3. 某些性格的宠物（如aloof、mysterious）可能完全不主动互动
+4. 对话要简洁，不要过于频繁
+
 性格类型指导：
 - extroverted: 话多、热情、喜欢分享
 - introverted: 话少、简洁、喜欢独处
@@ -624,8 +688,6 @@ ${conversationHistory}
 - friendly: 友善、温和、容易亲近
 - aloof: 冷漠、疏远、难以接近
 - playful: 爱玩、调皮、有趣
-
-请根据性格类型调整对话的长度和语气。内向的宠物应该话少，外向的宠物可以话多。
 
 直接返回对话内容，不要包含任何格式标记。`;
 
@@ -640,6 +702,45 @@ ${conversationHistory}
     } catch (error) {
       console.error('生成宠物主动互动失败:', error);
       return `${pet.name}似乎想说什么，但表达得不太清楚...`;
+    }
+  }
+
+  // 生成宠物活动描述
+  static async generatePetActivity(pet: Pet): Promise<string> {
+    const prompt = `描述${pet.name}当前的活动状态。
+
+宠物信息：
+- 名字: ${pet.name}
+- 类型: ${pet.type}
+- 性格特征: ${pet.characteristics.join(', ')}
+- 性格类型: ${pet.personalityType}
+- 当前心情: ${pet.mood}
+
+请生成一个简短的活动描述，描述宠物正在做什么。活动应该符合宠物的性格和类型。
+
+性格类型活动特点：
+- extroverted: 活跃、社交、探索
+- introverted: 安静、独处、观察
+- calm: 平静、专注、思考
+- energetic: 运动、玩耍、冒险
+- mysterious: 神秘、探索、观察
+- friendly: 互动、陪伴、温暖
+- aloof: 独立、疏远、高傲
+- playful: 游戏、娱乐、有趣
+
+请直接返回活动描述，不要包含任何格式标记。`;
+
+    const messages = [
+      { role: 'system', content: `你是${pet.name}的活动描述生成器。请根据宠物的性格和类型生成合适的活动描述。` },
+      { role: 'user', content: prompt }
+    ];
+
+    try {
+      const response = await this.callDeepSeekAPI(messages);
+      return response;
+    } catch (error) {
+      console.error('生成宠物活动失败:', error);
+      return `${pet.name}正在休息...`;
     }
   }
 } 
