@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Task } from '../types'
 import { GameService } from '../lib/game-service'
-import { CheckCircle, Circle, Star, Clock, Gift, MessageCircle, Timer, Activity } from 'lucide-react'
+import { CheckCircle, Circle, Star, Clock, Gift, MessageCircle, Timer, Activity, AlertCircle, RefreshCw } from 'lucide-react'
 
 interface TaskListProps {
   tasks: Task[]
@@ -14,10 +14,16 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
   const [conversationInput, setConversationInput] = useState('')
   const [timerStates, setTimerStates] = useState<{[key: string]: { elapsed: number; remaining: number; isComplete: boolean }}>({})
+  const [taskAttempts, setTaskAttempts] = useState<{[key: string]: number}>({})
+  const [taskHints, setTaskHints] = useState<{[key: string]: string}>({})
+  const [showFailureMessage, setShowFailureMessage] = useState<{[key: string]: boolean}>({})
 
   // 更新计时器状态
   useEffect(() => {
     const updateTimers = () => {
+      // 检查所有计时器状态
+      GameService.checkAllTimers();
+      
       const newTimerStates: {[key: string]: { elapsed: number; remaining: number; isComplete: boolean }} = {};
       
       tasks.forEach(task => {
@@ -28,7 +34,7 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
             
             // 如果计时器完成，自动完成任务
             if (progress.isComplete && !task.isCompleted) {
-              onTaskComplete(task.id, { duration: task.timerTask?.duration || 0 });
+              handleTaskComplete(task.id, { duration: task.timerTask?.duration || 0 });
             }
           }
         }
@@ -44,7 +50,7 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
     const interval = setInterval(updateTimers, 1000);
     
     return () => clearInterval(interval);
-  }, [tasks, onTaskComplete]);
+  }, [tasks]);
 
   const getTaskTypeIcon = (type: string) => {
     switch (type) {
@@ -99,41 +105,75 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
 
   const handleTaskComplete = (taskId: string, completionData?: any) => {
     try {
-      onTaskComplete(taskId, completionData)
-      setActiveTaskId(null)
-      setConversationInput('')
+      const result = GameService.completeTask(taskId, completionData);
+      
+      if (result.success) {
+        onTaskComplete(taskId, completionData);
+        setActiveTaskId(null);
+        setConversationInput('');
+        // 清除失败状态
+        setTaskAttempts(prev => ({ ...prev, [taskId]: 0 }));
+        setTaskHints(prev => ({ ...prev, [taskId]: '' }));
+        setShowFailureMessage(prev => ({ ...prev, [taskId]: false }));
+      } else {
+        // 任务失败，显示错误信息
+        const attempts = (taskAttempts[taskId] || 0) + 1;
+        setTaskAttempts(prev => ({ ...prev, [taskId]: attempts }));
+        setTaskHints(prev => ({ ...prev, [taskId]: result.hint || '' }));
+        setShowFailureMessage(prev => ({ ...prev, [taskId]: true }));
+        
+        // 3秒后自动隐藏失败消息
+        setTimeout(() => {
+          setShowFailureMessage(prev => ({ ...prev, [taskId]: false }));
+        }, 3000);
+        
+        // 如果失败5次，显示正确答案
+        if (attempts >= 5) {
+          const task = tasks.find(t => t.id === taskId);
+          const requiredKeywords = task?.conversationTask?.requiredKeywords;
+          if (requiredKeywords && requiredKeywords.length > 0) {
+            setTaskHints(prev => ({ 
+              ...prev, 
+              [taskId]: `正确答案示例: "${requiredKeywords.join(' ')}"` 
+            }));
+          }
+        }
+      }
     } catch (error) {
-      console.error('完成任务失败:', error)
+      console.error('完成任务失败:', error);
     }
   }
 
   const startPhysicalTask = (task: Task) => {
-    setActiveTaskId(task.id)
+    setActiveTaskId(task.id);
     // 这里可以添加实际的运动检测逻辑
     // 目前只是模拟完成
     setTimeout(() => {
-      handleTaskComplete(task.id, { completed: true })
-    }, 2000)
+      handleTaskComplete(task.id, { completed: true });
+    }, 2000);
   }
 
   const startTimerTask = (task: Task) => {
-    if (!task.timerTask) return
+    if (!task.timerTask) return;
     
-    setActiveTaskId(task.id)
+    setActiveTaskId(task.id);
     // 使用全局计时器管理
-    GameService.startTimer(task.id, task.timerTask.duration)
+    GameService.startTimer(task.id, task.timerTask.duration);
   }
 
   const handleConversationSubmit = (task: Task) => {
-    if (!conversationInput.trim()) return
+    if (!conversationInput.trim()) return;
     
-    handleTaskComplete(task.id, { message: conversationInput })
+    handleTaskComplete(task.id, { message: conversationInput });
   }
 
   const renderTaskCompletion = (task: Task) => {
     // 检查是否有活跃的计时器
     const timerState = timerStates[task.id];
     const hasActiveTimer = timerState && !timerState.isComplete;
+    const attempts = taskAttempts[task.id] || 0;
+    const hint = taskHints[task.id] || '';
+    const showFailure = showFailureMessage[task.id] || false;
 
     if (activeTaskId !== task.id && !hasActiveTimer) {
       return (
@@ -141,16 +181,16 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
           onClick={() => {
             switch (task.completionMethod) {
               case 'physical':
-                startPhysicalTask(task)
-                break
+                startPhysicalTask(task);
+                break;
               case 'timer':
-                startTimerTask(task)
-                break
+                startTimerTask(task);
+                break;
               case 'conversation':
-                setActiveTaskId(task.id)
-                break
+                setActiveTaskId(task.id);
+                break;
               default:
-                handleTaskComplete(task.id)
+                handleTaskComplete(task.id);
             }
           }}
           className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
@@ -158,7 +198,7 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
           <CheckCircle className="w-4 h-4" />
           <span>开始</span>
         </button>
-      )
+      );
     }
 
     switch (task.completionMethod) {
@@ -168,7 +208,7 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
             <Activity className="w-4 h-4 animate-pulse" />
             <span>进行中...</span>
           </div>
-        )
+        );
       
       case 'timer':
         if (timerState) {
@@ -179,37 +219,52 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
               <Timer className="w-4 h-4" />
               <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
             </div>
-          )
+          );
         }
         return null;
       
       case 'conversation':
         return (
-          <div className="ml-4 flex items-center space-x-2">
-            <input
-              type="text"
-              value={conversationInput}
-              onChange={(e) => setConversationInput(e.target.value)}
-              placeholder="输入对话内容..."
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onKeyPress={(e) => e.key === 'Enter' && handleConversationSubmit(task)}
-            />
-            <button
-              onClick={() => handleConversationSubmit(task)}
-              className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              发送
-            </button>
+          <div className="ml-4 flex flex-col space-y-2">
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                value={conversationInput}
+                onChange={(e) => setConversationInput(e.target.value)}
+                placeholder="输入对话内容..."
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyPress={(e) => e.key === 'Enter' && handleConversationSubmit(task)}
+              />
+              <button
+                onClick={() => handleConversationSubmit(task)}
+                className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                发送
+              </button>
+            </div>
+            
+            {/* 失败提示 */}
+            {showFailure && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-2">
+                <div className="flex items-center space-x-2 text-red-700">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="text-sm">尝试次数: {attempts}</span>
+                </div>
+                {hint && (
+                  <p className="text-sm text-red-600 mt-1">{hint}</p>
+                )}
+              </div>
+            )}
           </div>
-        )
+        );
       
       default:
-        return null
+        return null;
     }
-  }
+  };
 
-  const completedTasks = tasks.filter(task => task.isCompleted)
-  const activeTasks = tasks.filter(task => !task.isCompleted)
+  const completedTasks = tasks.filter(task => task.isCompleted);
+  const activeTasks = tasks.filter(task => !task.isCompleted);
 
   return (
     <div className="p-6">
@@ -351,5 +406,5 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
         </div>
       )}
     </div>
-  )
+  );
 } 

@@ -214,9 +214,31 @@ export class GameService {
     const gameState = this.loadGameState();
     if (!gameState) return;
 
-    // 移除计时器
+    // 只移除指定的计时器，不影响其他计时器
     gameState.activeTimers = gameState.activeTimers.filter(t => t.taskId !== taskId);
     this.saveGameState(gameState);
+  }
+
+  // 检查所有计时器状态，自动完成到期的计时器
+  static checkAllTimers(): void {
+    const gameState = this.loadGameState();
+    if (!gameState) return;
+
+    const now = Date.now();
+    const completedTimers: string[] = [];
+
+    gameState.activeTimers.forEach(timer => {
+      const elapsed = now - timer.startTime;
+      if (elapsed >= timer.duration) {
+        completedTimers.push(timer.taskId);
+      }
+    });
+
+    // 移除已完成的计时器
+    if (completedTimers.length > 0) {
+      gameState.activeTimers = gameState.activeTimers.filter(t => !completedTimers.includes(t.taskId));
+      this.saveGameState(gameState);
+    }
   }
 
   static async sendMessage(message: string): Promise<AIResponse> {
@@ -288,18 +310,20 @@ export class GameService {
   }
 
   // 新的任务完成系统
-  static completeTask(taskId: string, completionData?: any): void {
+  static completeTask(taskId: string, completionData?: any): { success: boolean; message: string; hint?: string } {
     const gameState = this.loadGameState();
-    if (!gameState) return;
+    if (!gameState) return { success: false, message: '游戏状态未找到' };
 
     const task = gameState.tasks.find(t => t.id === taskId);
-    if (!task || task.isCompleted) return;
+    if (!task || task.isCompleted) return { success: false, message: '任务不存在或已完成' };
 
     const activePet = this.getActivePet();
-    if (!activePet) return;
+    if (!activePet) return { success: false, message: '宠物未找到' };
 
     // 根据任务类型进行不同的完成逻辑
     let canComplete = false;
+    let failureReason = '';
+    let hint = '';
 
     switch (task.completionMethod) {
       case 'checkbox':
@@ -309,6 +333,9 @@ export class GameService {
       case 'physical':
         if (completionData && completionData.completed) {
           canComplete = true;
+        } else {
+          failureReason = '物理任务未完成';
+          hint = '请按照任务要求完成相应的动作';
         }
         break;
       
@@ -317,21 +344,40 @@ export class GameService {
           // 检查对话是否包含所需关键词
           const message = completionData.message.toLowerCase();
           const requiredKeywords = task.conversationTask?.requiredKeywords || [];
-          canComplete = requiredKeywords.some(keyword => 
-            message.includes(keyword.toLowerCase())
+          
+          // 检查是否包含所有关键词
+          const missingKeywords = requiredKeywords.filter(keyword => 
+            !message.includes(keyword.toLowerCase())
           );
+          
+          if (missingKeywords.length === 0) {
+            canComplete = true;
+          } else {
+            failureReason = `缺少关键词: ${missingKeywords.join(', ')}`;
+            hint = `请在对话中包含以下关键词: ${requiredKeywords.join(', ')}`;
+          }
+        } else {
+          failureReason = '未提供对话内容';
+          hint = '请在输入框中输入对话内容';
         }
         break;
       
       case 'timer':
         if (completionData && completionData.duration >= (task.timerTask?.duration || 0)) {
           canComplete = true;
+        } else {
+          failureReason = '计时任务时间不足';
+          hint = `请等待${task.timerTask?.duration || 0}秒完成`;
         }
         break;
     }
 
     if (!canComplete) {
-      throw new Error('任务完成条件未满足');
+      return { 
+        success: false, 
+        message: `任务完成条件未满足: ${failureReason}`,
+        hint 
+      };
     }
 
     task.isCompleted = true;
@@ -362,6 +408,11 @@ export class GameService {
     }
 
     this.saveGameState(gameState);
+    
+    return { 
+      success: true, 
+      message: `任务完成！获得 ${task.reward.experience} 经验值` 
+    };
   }
 
   // 宠物主动互动
