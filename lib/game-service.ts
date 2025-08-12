@@ -53,7 +53,7 @@ export class GameService {
     try {
       // 第一步：图像分析
       console.log('开始图像分析...');
-      const imageAnalysis = await ImageAnalysisService.analyzeImage(imageFile);
+      const imageAnalysis = await ImageAnalysisService.analyzeImageSmart(imageFile);
       console.log('图像分析结果:', imageAnalysis);
       
       // 第二步：基于分析结果生成宠物

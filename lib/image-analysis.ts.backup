@@ -73,10 +73,10 @@ export class ImageAnalysisService {
       objects = ['泡泡', '液体', '透明'];
       colors = ['透明', '彩虹色', '白色'];
       description = '一些美丽的泡泡';
-    } else if (fileNameLower.includes('tea') || fileNameLower.includes('奶茶') || fileNameLower.includes('珍珠') || fileNameLower.includes('bubble') || fileNameLower.includes('boba') || fileNameLower.includes('milk')) {
-      objects = ['珍珠奶茶', '饮料', '珍珠', '奶茶', '塑料杯', '吸管', '杯盖', '卡通角色'];
-      colors = ['浅棕色', '深色', '红色', '白色', '蓝色', '黄色', '粉色'];
-      description = '一杯带有卡通设计的珍珠奶茶，杯身有上海地标建筑图案，包含珍珠、吸管和彩色杯盖';
+    } else if (fileNameLower.includes('tea') || fileNameLower.includes('奶茶') || fileNameLower.includes('珍珠')) {
+      objects = ['珍珠奶茶', '饮料', '珍珠', '奶茶'];
+      colors = ['棕色', '黑色', '白色'];
+      description = '一杯美味的珍珠奶茶';
     } else {
       // 默认分析
       objects = ['物体', '物品'];
@@ -148,22 +148,3 @@ export class ImageAnalysisService {
     }
   }
 } 
-  // 智能图像分析：优先使用OpenAI Vision，失败则回退到文件名分析
-  static async analyzeImageSmart(imageFile: File): Promise<ImageAnalysisResult> {
-    try {
-      // 首先尝试OpenAI Vision API
-      console.log('尝试使用OpenAI Vision API...');
-      const openaiResult = await this.analyzeImageWithOpenAI(imageFile);
-      if (openaiResult && openaiResult.objects.length > 0) {
-        console.log('OpenAI Vision API分析成功');
-        return openaiResult;
-      }
-    } catch (error) {
-      console.log('OpenAI Vision API不可用，回退到文件名分析');
-    }
-    
-    // 回退到改进的文件名分析
-    console.log('使用改进的文件名分析...');
-    return this.simulateImageAnalysis(imageFile.name, '');
-  }
-}
