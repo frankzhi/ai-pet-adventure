@@ -781,4 +781,23 @@ export class GameService {
       this.saveGameState(gameState);
     }
   }
+
+  static resetDailyTasks(): void {
+    const gameState = this.loadGameState();
+    if (!gameState) return;
+
+    const activePet = this.getActivePet();
+    if (!activePet) return;
+
+    // 重置日常任务
+    gameState.tasks = gameState.tasks.filter(task => task.type !== 'daily');
+    
+    // 生成新的日常任务
+    AIService.generateDailyTasks(activePet).then(newTasks => {
+      gameState.tasks.push(...newTasks);
+      this.saveGameState(gameState);
+    }).catch(error => {
+      console.error('重置日常任务失败:', error);
+    });
+  }
 } 
