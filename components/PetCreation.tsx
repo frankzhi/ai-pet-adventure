@@ -54,7 +54,7 @@ export default function PetCreation({ onPetCreated }: PetCreationProps) {
       
       if (selectedFile) {
         // 如果有文件，使用文件名作为描述
-        description = `一张${selectedFile.name.split('.')[0]}的图片`
+        description = `一张${selectedFile.name.split('.')[0]}的图片，请根据文件名分析图片内容并创建相应的宠物角色`
       }
 
       const gameState = await GameService.createNewPet(
