@@ -4,6 +4,7 @@ import { ImageAnalysisService, ImageAnalysisResult } from './image-analysis';
 
 export class GameService {
   private static STORAGE_KEY = 'ai_pet_adventure_game_state';
+  private static MAX_PETS = 2; // 最多同时养两只宠物
 
   static saveGameState(gameState: GameState): void {
     try {
@@ -25,7 +26,7 @@ export class GameService {
       if (!savedState) return null;
 
       const gameState = JSON.parse(savedState, (key, value) => {
-        if (key === 'createdAt' || key === 'lastInteraction' || key === 'completedAt' || key === 'timestamp') {
+        if (key === 'createdAt' || key === 'lastInteraction' || key === 'completedAt' || key === 'timestamp' || key === 'lastPetInteraction') {
           return new Date(value);
         }
         return value;
@@ -51,6 +52,12 @@ export class GameService {
     genre?: string
   ): Promise<GameState> {
     try {
+      // 检查是否已有宠物
+      const existingState = this.loadGameState();
+      if (existingState && existingState.pets.length >= this.MAX_PETS) {
+        throw new Error(`最多只能同时养${this.MAX_PETS}只宠物`);
+      }
+
       // 第一步：图像分析
       console.log('开始图像分析...');
       const imageAnalysis = await ImageAnalysisService.analyzeImageSmart(imageFile);
@@ -64,13 +71,27 @@ export class GameService {
       console.log('生成日常任务...');
       const tasks = await AIService.generateDailyTasks(pet);
       
-      const gameState: GameState = {
-        pet,
-        tasks,
-        conversations: [],
-        currentStory: `欢迎来到${pet.name}的世界！${pet.worldSetting}`,
-        worldGenre: genre || '随机创意风格',
-      };
+      let gameState: GameState;
+      
+      if (existingState) {
+        // 添加到现有游戏状态
+        existingState.pets.push(pet);
+        existingState.activePetId = pet.id;
+        existingState.tasks.push(...tasks);
+        existingState.currentStory += `\n🎉 欢迎新成员${pet.name}加入！`;
+        gameState = existingState;
+      } else {
+        // 创建新的游戏状态
+        gameState = {
+          pets: [pet],
+          activePetId: pet.id,
+          tasks,
+          conversations: [],
+          currentStory: `欢迎来到${pet.name}的世界！${pet.worldSetting}`,
+          worldGenre: genre || '随机创意风格',
+          lastPetInteraction: new Date(),
+        };
+      }
 
       this.saveGameState(gameState);
       return gameState;
@@ -82,16 +103,36 @@ export class GameService {
 
   static async createNewPet(imageDescription: string, genre?: string): Promise<GameState> {
     try {
+      // 检查是否已有宠物
+      const existingState = this.loadGameState();
+      if (existingState && existingState.pets.length >= this.MAX_PETS) {
+        throw new Error(`最多只能同时养${this.MAX_PETS}只宠物`);
+      }
+
       const pet = await AIService.generatePetFromImage(imageDescription, genre);
       const tasks = await AIService.generateDailyTasks(pet);
       
-      const gameState: GameState = {
-        pet,
-        tasks,
-        conversations: [],
-        currentStory: `欢迎来到${pet.name}的世界！${pet.worldSetting}`,
-        worldGenre: genre || '随机创意风格',
-      };
+      let gameState: GameState;
+      
+      if (existingState) {
+        // 添加到现有游戏状态
+        existingState.pets.push(pet);
+        existingState.activePetId = pet.id;
+        existingState.tasks.push(...tasks);
+        existingState.currentStory += `\n🎉 欢迎新成员${pet.name}加入！`;
+        gameState = existingState;
+      } else {
+        // 创建新的游戏状态
+        gameState = {
+          pets: [pet],
+          activePetId: pet.id,
+          tasks,
+          conversations: [],
+          currentStory: `欢迎来到${pet.name}的世界！${pet.worldSetting}`,
+          worldGenre: genre || '随机创意风格',
+          lastPetInteraction: new Date(),
+        };
+      }
 
       this.saveGameState(gameState);
       return gameState;
@@ -101,10 +142,48 @@ export class GameService {
     }
   }
 
+  static getActivePet(): Pet | null {
+    const gameState = this.loadGameState();
+    if (!gameState) return null;
+    
+    return gameState.pets.find(pet => pet.id === gameState.activePetId) || null;
+  }
+
+  static switchActivePet(petId: string): void {
+    const gameState = this.loadGameState();
+    if (!gameState) return;
+    
+    const pet = gameState.pets.find(p => p.id === petId);
+    if (pet) {
+      gameState.activePetId = petId;
+      this.saveGameState(gameState);
+    }
+  }
+
+  static removePet(petId: string): void {
+    const gameState = this.loadGameState();
+    if (!gameState) return;
+    
+    gameState.pets = gameState.pets.filter(p => p.id !== petId);
+    gameState.tasks = gameState.tasks.filter(t => !t.id.includes(petId));
+    
+    // 如果删除的是当前活跃宠物，切换到第一个宠物
+    if (gameState.activePetId === petId && gameState.pets.length > 0) {
+      gameState.activePetId = gameState.pets[0].id;
+    }
+    
+    this.saveGameState(gameState);
+  }
+
   static async sendMessage(message: string): Promise<AIResponse> {
     const gameState = this.loadGameState();
     if (!gameState) {
       throw new Error('没有找到游戏状态');
+    }
+
+    const activePet = this.getActivePet();
+    if (!activePet) {
+      throw new Error('没有找到活跃的宠物');
     }
 
     // 添加用户消息到对话历史
@@ -121,7 +200,7 @@ export class GameService {
       // 获取AI回应
       const aiResponse = await AIService.generateStoryResponse(
         message,
-        gameState.pet,
+        activePet,
         gameState.conversations
       );
 
@@ -137,15 +216,15 @@ export class GameService {
 
       // 更新宠物状态
       if (aiResponse.petStatus) {
-        Object.assign(gameState.pet, aiResponse.petStatus);
-        gameState.pet.lastInteraction = new Date();
+        Object.assign(activePet, aiResponse.petStatus);
+        activePet.lastInteraction = new Date();
       }
 
       // 检查是否需要生成特殊任务
       if (Math.random() < 0.1) { // 10%概率生成特殊任务
         try {
           const specialTask = await AIService.generateSpecialTask(
-            gameState.pet,
+            activePet,
             `用户说: ${message}`
           );
           gameState.tasks.push(specialTask);
@@ -164,40 +243,153 @@ export class GameService {
     }
   }
 
-  static completeTask(taskId: string): void {
+  // 新的任务完成系统
+  static completeTask(taskId: string, completionData?: any): void {
     const gameState = this.loadGameState();
     if (!gameState) return;
 
     const task = gameState.tasks.find(t => t.id === taskId);
     if (!task || task.isCompleted) return;
 
+    const activePet = this.getActivePet();
+    if (!activePet) return;
+
+    // 根据任务类型进行不同的完成逻辑
+    let canComplete = false;
+
+    switch (task.completionMethod) {
+      case 'checkbox':
+        canComplete = true;
+        break;
+      
+      case 'physical':
+        if (completionData && completionData.completed) {
+          canComplete = true;
+        }
+        break;
+      
+      case 'conversation':
+        if (completionData && completionData.message) {
+          // 检查对话是否包含所需关键词
+          const message = completionData.message.toLowerCase();
+          const requiredKeywords = task.conversationTask?.requiredKeywords || [];
+          canComplete = requiredKeywords.some(keyword => 
+            message.includes(keyword.toLowerCase())
+          );
+        }
+        break;
+      
+      case 'timer':
+        if (completionData && completionData.duration >= (task.timerTask?.duration || 0)) {
+          canComplete = true;
+        }
+        break;
+    }
+
+    if (!canComplete) {
+      throw new Error('任务完成条件未满足');
+    }
+
     task.isCompleted = true;
     task.completedAt = new Date();
 
     // 应用奖励
-    gameState.pet.experience += task.reward.experience;
-    gameState.pet.happiness = Math.min(100, gameState.pet.happiness + task.reward.happiness);
-    gameState.pet.health = Math.min(100, gameState.pet.health + task.reward.health);
+    activePet.experience += task.reward.experience;
+    activePet.happiness = Math.min(100, activePet.happiness + task.reward.happiness);
+    activePet.health = Math.min(100, activePet.health + task.reward.health);
+    
+    if (task.reward.energy !== undefined) {
+      activePet.energy = Math.min(100, activePet.energy + task.reward.energy);
+    }
+    if (task.reward.hunger !== undefined) {
+      activePet.hunger = Math.max(0, activePet.hunger + task.reward.hunger);
+    }
 
     // 检查升级
-    const newLevel = Math.floor(gameState.pet.experience / 100) + 1;
-    if (newLevel > gameState.pet.level) {
-      gameState.pet.level = newLevel;
-      gameState.currentStory += `\n🎉 恭喜！${gameState.pet.name}升级到了${newLevel}级！`;
+    const newLevel = Math.floor(activePet.experience / 100) + 1;
+    if (newLevel > activePet.level) {
+      activePet.level = newLevel;
+      gameState.currentStory += `\n🎉 恭喜！${activePet.name}升级到了${newLevel}级！`;
     }
 
     this.saveGameState(gameState);
+  }
+
+  // 宠物主动互动
+  static async checkPetInitiatedInteraction(): Promise<string | null> {
+    const gameState = this.loadGameState();
+    if (!gameState) return null;
+
+    const activePet = this.getActivePet();
+    if (!activePet) return null;
+
+    const now = new Date();
+    const lastInteraction = new Date(gameState.lastPetInteraction);
+    const minutesSinceLastInteraction = (now.getTime() - lastInteraction.getTime()) / (1000 * 60);
+
+    // 检查是否应该主动互动（5-15分钟间隔）
+    if (minutesSinceLastInteraction < 5) return null;
+
+    // 根据宠物状态决定是否主动互动
+    let shouldInitiate = false;
+    let reason = '';
+
+    if (activePet.happiness < 30) {
+      shouldInitiate = true;
+      reason = '感到孤独，想要陪伴';
+    } else if (activePet.hunger > 70) {
+      shouldInitiate = true;
+      reason = '感到饥饿，需要食物';
+    } else if (activePet.energy < 20) {
+      shouldInitiate = true;
+      reason = '感到疲惫，需要休息';
+    } else if (activePet.health < 50) {
+      shouldInitiate = true;
+      reason = '感到不适，需要照顾';
+    } else if (Math.random() < 0.3) { // 30%概率随机主动互动
+      shouldInitiate = true;
+      reason = '想要和主人分享一些有趣的事情';
+    }
+
+    if (shouldInitiate) {
+      try {
+        const interaction = await AIService.generatePetInitiatedInteraction(activePet, reason);
+        
+        // 添加宠物主动发起的对话
+        const petMessage: Conversation = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: interaction,
+          timestamp: new Date(),
+          isPetInitiated: true,
+        };
+
+        gameState.conversations.push(petMessage);
+        gameState.lastPetInteraction = new Date();
+        this.saveGameState(gameState);
+
+        return interaction;
+      } catch (error) {
+        console.error('宠物主动互动失败:', error);
+        return null;
+      }
+    }
+
+    return null;
   }
 
   static resetDailyTasks(): void {
     const gameState = this.loadGameState();
     if (!gameState) return;
 
+    const activePet = this.getActivePet();
+    if (!activePet) return;
+
     // 重置日常任务
     gameState.tasks = gameState.tasks.filter(task => task.type !== 'daily');
     
     // 生成新的日常任务
-    AIService.generateDailyTasks(gameState.pet).then(newTasks => {
+    AIService.generateDailyTasks(activePet).then(newTasks => {
       gameState.tasks.push(...newTasks);
       this.saveGameState(gameState);
     }).catch(error => {
@@ -210,28 +402,36 @@ export class GameService {
     if (!gameState) return;
 
     const now = new Date();
-    const lastInteraction = new Date(gameState.pet.lastInteraction);
-    const hoursSinceLastInteraction = (now.getTime() - lastInteraction.getTime()) / (1000 * 60 * 60);
+    
+    // 更新所有宠物的状态
+    gameState.pets.forEach(pet => {
+      const lastInteraction = new Date(pet.lastInteraction);
+      const hoursSinceLastInteraction = (now.getTime() - lastInteraction.getTime()) / (1000 * 60 * 60);
 
-    // 根据时间流逝更新状态
-    if (hoursSinceLastInteraction > 1) {
-      gameState.pet.hunger = Math.min(100, gameState.pet.hunger + hoursSinceLastInteraction * 5);
-      gameState.pet.energy = Math.max(0, gameState.pet.energy - hoursSinceLastInteraction * 2);
-      gameState.pet.happiness = Math.max(0, gameState.pet.happiness - hoursSinceLastInteraction * 1);
-    }
+      // 根据时间流逝更新状态
+      if (hoursSinceLastInteraction > 1) {
+        pet.hunger = Math.min(100, pet.hunger + hoursSinceLastInteraction * 5);
+        pet.energy = Math.max(0, pet.energy - hoursSinceLastInteraction * 2);
+        pet.happiness = Math.max(0, pet.happiness - hoursSinceLastInteraction * 1);
+      }
 
-    // 检查宠物是否死亡
-    if (gameState.pet.health <= 0 || gameState.pet.happiness <= 0) {
-      gameState.pet.isAlive = false;
-      gameState.currentStory += `\n💔 ${gameState.pet.name}因为缺乏照顾而离开了...`;
-    }
+      // 检查宠物是否死亡
+      if (pet.health <= 0 || pet.happiness <= 0) {
+        pet.isAlive = false;
+        gameState.currentStory += `\n💔 ${pet.name}因为缺乏照顾而离开了...`;
+      }
+    });
 
     this.saveGameState(gameState);
   }
 
   static getPetStatus(): Pet | null {
+    return this.getActivePet();
+  }
+
+  static getAllPets(): Pet[] {
     const gameState = this.loadGameState();
-    return gameState?.pet || null;
+    return gameState?.pets || [];
   }
 
   static getTasks(): Task[] {
