@@ -136,8 +136,8 @@ export class ImageAnalysisService {
       const descriptionMatch = content.match(/描述：(.*?)(?=\n|$)/);
       
       return {
-        objects: objectsMatch ? objectsMatch[1].split(',').map(s => s.trim()) : [],
-        colors: colorsMatch ? colorsMatch[1].split(',').map(s => s.trim()) : [],
+        objects: objectsMatch ? objectsMatch[1].split(',').map((s: string) => s.trim()) : [],
+        colors: colorsMatch ? colorsMatch[1].split(',').map((s: string) => s.trim()) : [],
         description: descriptionMatch ? descriptionMatch[1].trim() : content,
         confidence: 0.9
       };
