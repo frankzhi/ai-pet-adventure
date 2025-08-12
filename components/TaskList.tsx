@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Task } from '../types'
+import { GameService } from '../lib/game-service'
 import { CheckCircle, Circle, Star, Clock, Gift, MessageCircle, Timer, Activity } from 'lucide-react'
 
 interface TaskListProps {
@@ -11,9 +12,39 @@ interface TaskListProps {
 
 export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
-  const [timerDuration, setTimerDuration] = useState(0)
-  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null)
   const [conversationInput, setConversationInput] = useState('')
+  const [timerStates, setTimerStates] = useState<{[key: string]: { elapsed: number; remaining: number; isComplete: boolean }}>({})
+
+  // 更新计时器状态
+  useEffect(() => {
+    const updateTimers = () => {
+      const newTimerStates: {[key: string]: { elapsed: number; remaining: number; isComplete: boolean }} = {};
+      
+      tasks.forEach(task => {
+        if (task.completionMethod === 'timer') {
+          const progress = GameService.getTimerProgress(task.id);
+          if (progress) {
+            newTimerStates[task.id] = progress;
+            
+            // 如果计时器完成，自动完成任务
+            if (progress.isComplete && !task.isCompleted) {
+              onTaskComplete(task.id, { duration: task.timerTask?.duration || 0 });
+            }
+          }
+        }
+      });
+      
+      setTimerStates(newTimerStates);
+    };
+
+    // 立即更新一次
+    updateTimers();
+
+    // 每秒更新一次计时器状态
+    const interval = setInterval(updateTimers, 1000);
+    
+    return () => clearInterval(interval);
+  }, [tasks, onTaskComplete]);
 
   const getTaskTypeIcon = (type: string) => {
     switch (type) {
@@ -71,11 +102,6 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
       onTaskComplete(taskId, completionData)
       setActiveTaskId(null)
       setConversationInput('')
-      if (timerInterval) {
-        clearInterval(timerInterval)
-        setTimerInterval(null)
-      }
-      setTimerDuration(0)
     } catch (error) {
       console.error('完成任务失败:', error)
     }
@@ -94,21 +120,8 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
     if (!task.timerTask) return
     
     setActiveTaskId(task.id)
-    setTimerDuration(task.timerTask.duration)
-    
-    const interval = setInterval(() => {
-      setTimerDuration(prev => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          setTimerInterval(null)
-          handleTaskComplete(task.id, { duration: task.timerTask!.duration })
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-    
-    setTimerInterval(interval)
+    // 使用全局计时器管理
+    GameService.startTimer(task.id, task.timerTask.duration)
   }
 
   const handleConversationSubmit = (task: Task) => {
@@ -118,7 +131,11 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
   }
 
   const renderTaskCompletion = (task: Task) => {
-    if (activeTaskId !== task.id) {
+    // 检查是否有活跃的计时器
+    const timerState = timerStates[task.id];
+    const hasActiveTimer = timerState && !timerState.isComplete;
+
+    if (activeTaskId !== task.id && !hasActiveTimer) {
       return (
         <button
           onClick={() => {
@@ -154,12 +171,17 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
         )
       
       case 'timer':
-        return (
-          <div className="ml-4 px-4 py-2 bg-yellow-600 text-white rounded-lg flex items-center space-x-2">
-            <Timer className="w-4 h-4" />
-            <span>{Math.floor(timerDuration / 60)}:{(timerDuration % 60).toString().padStart(2, '0')}</span>
-          </div>
-        )
+        if (timerState) {
+          const minutes = Math.floor(timerState.remaining / 60000);
+          const seconds = Math.floor((timerState.remaining % 60000) / 1000);
+          return (
+            <div className="ml-4 px-4 py-2 bg-yellow-600 text-white rounded-lg flex items-center space-x-2">
+              <Timer className="w-4 h-4" />
+              <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
+            </div>
+          )
+        }
+        return null;
       
       case 'conversation':
         return (
@@ -274,7 +296,7 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
                       {task.reward.hunger !== undefined && (
                         <div className="flex items-center space-x-1">
                           <span className="text-orange-500">🍽️</span>
-                          <span className="text-gray-600">{task.reward.hunger > 0 ? '+' : ''}{task.reward.hunger} 饥饿</span>
+                          <span className="text-gray-600">{task.reward.hunger > 0 ? '+' : ''}{task.reward.hunger} 饱食度</span>
                         </div>
                       )}
                     </div>

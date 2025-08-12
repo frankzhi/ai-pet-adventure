@@ -1,4 +1,4 @@
-import { Pet, Task, Conversation, GameState, AIResponse } from '../types';
+import { Pet, Task, Conversation, GameState, AIResponse, TimerState } from '../types';
 import { AIService } from './ai-service';
 import { ImageAnalysisService, ImageAnalysisResult } from './image-analysis';
 
@@ -90,6 +90,7 @@ export class GameService {
           currentStory: `欢迎来到${pet.name}的世界！${pet.worldSetting}`,
           worldGenre: genre || '随机创意风格',
           lastPetInteraction: new Date(),
+          activeTimers: [],
         };
       }
 
@@ -131,6 +132,7 @@ export class GameService {
           currentStory: `欢迎来到${pet.name}的世界！${pet.worldSetting}`,
           worldGenre: genre || '随机创意风格',
           lastPetInteraction: new Date(),
+          activeTimers: [],
         };
       }
 
@@ -172,6 +174,48 @@ export class GameService {
       gameState.activePetId = gameState.pets[0].id;
     }
     
+    this.saveGameState(gameState);
+  }
+
+  // 计时器管理
+  static startTimer(taskId: string, duration: number): void {
+    const gameState = this.loadGameState();
+    if (!gameState) return;
+
+    // 移除已存在的相同任务计时器
+    gameState.activeTimers = gameState.activeTimers.filter(t => t.taskId !== taskId);
+    
+    // 添加新计时器
+    gameState.activeTimers.push({
+      taskId,
+      startTime: Date.now(),
+      duration: duration * 1000, // 转换为毫秒
+      isActive: true,
+    });
+
+    this.saveGameState(gameState);
+  }
+
+  static getTimerProgress(taskId: string): { elapsed: number; remaining: number; isComplete: boolean } | null {
+    const gameState = this.loadGameState();
+    if (!gameState) return null;
+
+    const timer = gameState.activeTimers.find(t => t.taskId === taskId);
+    if (!timer) return null;
+
+    const elapsed = Date.now() - timer.startTime;
+    const remaining = Math.max(0, timer.duration - elapsed);
+    const isComplete = elapsed >= timer.duration;
+
+    return { elapsed, remaining, isComplete };
+  }
+
+  static completeTimer(taskId: string): void {
+    const gameState = this.loadGameState();
+    if (!gameState) return;
+
+    // 移除计时器
+    gameState.activeTimers = gameState.activeTimers.filter(t => t.taskId !== taskId);
     this.saveGameState(gameState);
   }
 
@@ -312,6 +356,11 @@ export class GameService {
       gameState.currentStory += `\n🎉 恭喜！${activePet.name}升级到了${newLevel}级！`;
     }
 
+    // 如果是计时器任务，移除计时器
+    if (task.completionMethod === 'timer') {
+      this.completeTimer(taskId);
+    }
+
     this.saveGameState(gameState);
   }
 
@@ -337,7 +386,7 @@ export class GameService {
     if (activePet.happiness < 30) {
       shouldInitiate = true;
       reason = '感到孤独，想要陪伴';
-    } else if (activePet.hunger > 70) {
+    } else if (activePet.hunger < 30) { // 饱食度低
       shouldInitiate = true;
       reason = '感到饥饿，需要食物';
     } else if (activePet.energy < 20) {
@@ -410,7 +459,7 @@ export class GameService {
 
       // 根据时间流逝更新状态
       if (hoursSinceLastInteraction > 1) {
-        pet.hunger = Math.min(100, pet.hunger + hoursSinceLastInteraction * 5);
+        pet.hunger = Math.max(0, pet.hunger - hoursSinceLastInteraction * 5); // 饱食度减少
         pet.energy = Math.max(0, pet.energy - hoursSinceLastInteraction * 2);
         pet.happiness = Math.max(0, pet.happiness - hoursSinceLastInteraction * 1);
       }
@@ -447,5 +496,10 @@ export class GameService {
   static getCurrentStory(): string {
     const gameState = this.loadGameState();
     return gameState?.currentStory || '';
+  }
+
+  static getActiveTimers(): TimerState[] {
+    const gameState = this.loadGameState();
+    return gameState?.activeTimers || [];
   }
 } 

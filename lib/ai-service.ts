@@ -83,10 +83,18 @@ export class AIService {
     };
   }
 
+  // 生成随机性格类型
+  private static generatePersonalityType(): 'extroverted' | 'introverted' | 'calm' | 'energetic' | 'mysterious' | 'friendly' | 'aloof' | 'playful' {
+    const types = ['extroverted', 'introverted', 'calm', 'energetic', 'mysterious', 'friendly', 'aloof', 'playful'];
+    return types[Math.floor(Math.random() * types.length)] as any;
+  }
+
   static async generatePetFromImageAnalysis(
     imageAnalysis: ImageAnalysisResult, 
     genre?: string
   ): Promise<Pet> {
+    const personalityType = this.generatePersonalityType();
+    
     const prompt = `你是一个创意作家，需要根据图像分析结果创建一个独特的电子宠物角色。
 
 图像分析结果：
@@ -97,13 +105,25 @@ export class AIService {
 
 ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
 
+性格类型: ${personalityType} (请根据这个性格类型来设计角色)
+
 请基于上述图像分析结果，创建一个完整的宠物角色设定。宠物应该与识别出的物体、颜色和特征高度相关。
 
 请创建一个完整的宠物角色设定，包括：
 1. 世界设定（可以是科幻、奇幻、现实、神话等任何风格，但要与识别内容相关）
 2. 背景故事（宠物的来历、特殊能力等，要与识别出的物体和特征相关）
-3. 性格特征（3-5个关键词，体现识别物体的特点）
-4. 个性描述（一段话描述，要基于识别内容）
+3. 性格特征（3-5个关键词，体现识别物体的特点和指定的性格类型）
+4. 个性描述（一段话描述，要基于识别内容和性格类型）
+
+性格类型说明：
+- extroverted: 外向、话多、喜欢社交
+- introverted: 内向、话少、喜欢独处
+- calm: 冷静、理性、沉稳
+- energetic: 活力充沛、好动、热情
+- mysterious: 神秘、高冷、深不可测
+- friendly: 友善、温和、容易亲近
+- aloof: 冷漠、疏远、难以接近
+- playful: 爱玩、调皮、有趣
 
 请以JSON格式返回，格式如下：
 {
@@ -115,10 +135,10 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
   "personality": "个性描述"
 }
 
-重要：请确保宠物设定与图像分析结果高度相关，不要使用通用的描述。每个宠物都应该是独特的，基于识别出的具体内容。`;
+重要：请确保宠物设定与图像分析结果高度相关，并根据指定的性格类型来设计角色。每个宠物都应该是独特的，基于识别出的具体内容和性格类型。`;
 
     const messages = [
-      { role: 'system', content: '你是一个创意作家，专门创作有趣的电子宠物角色设定。请确保每个角色都是独特的，基于图像分析的具体结果。' },
+      { role: 'system', content: '你是一个创意作家，专门创作有趣的电子宠物角色设定。请确保每个角色都是独特的，基于图像分析的具体结果和指定的性格类型。' },
       { role: 'user', content: prompt }
     ];
 
@@ -145,7 +165,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         health: 100,
         happiness: 100,
         energy: 100,
-        hunger: 0,
+        hunger: 100, // 初始饱食度为100%
         level: 1,
         experience: 0,
         createdAt: new Date(),
@@ -153,6 +173,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         isAlive: true,
         petType,
         specialNeeds,
+        personalityType,
       };
     } catch (error) {
       console.error('生成宠物设定失败:', error);
@@ -161,12 +182,26 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
   }
 
   static async generatePetFromImage(imageDescription: string, genre?: string): Promise<Pet> {
+    const personalityType = this.generatePersonalityType();
+    
     const prompt = `你是一个创意作家，需要根据描述创建一个独特的电子宠物角色。
 
 描述: ${imageDescription}
 ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
 
+性格类型: ${personalityType} (请根据这个性格类型来设计角色)
+
 请基于上述描述，创建一个完整的宠物角色设定。
+
+性格类型说明：
+- extroverted: 外向、话多、喜欢社交
+- introverted: 内向、话少、喜欢独处
+- calm: 冷静、理性、沉稳
+- energetic: 活力充沛、好动、热情
+- mysterious: 神秘、高冷、深不可测
+- friendly: 友善、温和、容易亲近
+- aloof: 冷漠、疏远、难以接近
+- playful: 爱玩、调皮、有趣
 
 请以JSON格式返回，格式如下：
 {
@@ -206,7 +241,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         health: 100,
         happiness: 100,
         energy: 100,
-        hunger: 0,
+        hunger: 100, // 初始饱食度为100%
         level: 1,
         experience: 0,
         createdAt: new Date(),
@@ -214,6 +249,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         isAlive: true,
         petType,
         specialNeeds,
+        personalityType,
       };
     } catch (error) {
       console.error('生成宠物设定失败:', error);
@@ -231,6 +267,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
 - 特殊需求: ${pet.specialNeeds.join(', ')}
 - 性格特征: ${pet.characteristics.join(', ')}
 - 个性: ${pet.personality}
+- 性格类型: ${pet.personalityType}
 
 请生成3个不同类型的任务：
 1. 一个喂养/照顾类任务（根据宠物类型调整，如机器人充电、植物浇水等）
@@ -400,6 +437,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
 - 类型: ${pet.type}
 - 性格特征: ${pet.characteristics.join(', ')}
 - 个性: ${pet.personality}
+- 性格类型: ${pet.personalityType}
 - 世界设定: ${pet.worldSetting}
 - 背景故事: ${pet.background}
 - 特殊需求: ${pet.specialNeeds.join(', ')}
@@ -408,7 +446,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
 - 健康: ${pet.health}%
 - 快乐: ${pet.happiness}%
 - 能量: ${pet.energy}%
-- 饥饿: ${pet.hunger}%
+- 饱食度: ${pet.hunger}%
 
 对话历史：
 ${conversationHistory}
@@ -417,13 +455,25 @@ ${conversationHistory}
 
 请以${pet.name}的身份回应，保持角色设定的一致性。回应要自然、有趣，符合宠物的性格特点。
 
+性格类型指导：
+- extroverted: 话多、热情、喜欢分享
+- introverted: 话少、简洁、喜欢独处
+- calm: 冷静、理性、沉稳
+- energetic: 活力充沛、好动、热情
+- mysterious: 神秘、高冷、深不可测
+- friendly: 友善、温和、容易亲近
+- aloof: 冷漠、疏远、难以接近
+- playful: 爱玩、调皮、有趣
+
+请根据性格类型调整回应的长度和语气。内向的宠物应该话少，外向的宠物可以话多。
+
 如果用户完成了某个任务，请给予适当的奖励和鼓励。
 如果宠物的状态较低，可以在回应中表达相应的情绪。
 
 请直接返回回应内容，不要包含任何格式标记。`;
 
     const messages = [
-      { role: 'system', content: `你是${pet.name}，一个${pet.type}。请始终保持角色设定的一致性，不要打破角色。` },
+      { role: 'system', content: `你是${pet.name}，一个${pet.type}。请始终保持角色设定的一致性，不要打破角色。根据性格类型调整回应风格。` },
       { role: 'user', content: prompt }
     ];
 
@@ -453,7 +503,7 @@ ${conversationHistory}
     // 分析用户消息中的任务完成情况
     if (userMessage.includes('完成') || userMessage.includes('做了') || userMessage.includes('完成了')) {
       if (userMessage.includes('喂') || userMessage.includes('吃') || userMessage.includes('充电') || userMessage.includes('浇水')) {
-        statusUpdate.hunger = Math.max(0, pet.hunger - 15);
+        statusUpdate.hunger = Math.min(100, pet.hunger + 15); // 增加饱食度
         statusUpdate.happiness = Math.min(100, pet.happiness + 10);
         hasUpdate = true;
       }
@@ -553,6 +603,7 @@ ${conversationHistory}
 - 类型: ${pet.type}
 - 性格特征: ${pet.characteristics.join(', ')}
 - 个性: ${pet.personality}
+- 性格类型: ${pet.personalityType}
 
 主动互动原因: ${reason}
 
@@ -560,14 +611,26 @@ ${conversationHistory}
 - 健康: ${pet.health}%
 - 快乐: ${pet.happiness}%
 - 能量: ${pet.energy}%
-- 饥饿: ${pet.hunger}%
+- 饱食度: ${pet.hunger}%
 
 请以${pet.name}的身份主动发起对话，表达你的需求、感受或想法。对话要自然、符合角色设定，不要过于突兀。
+
+性格类型指导：
+- extroverted: 话多、热情、喜欢分享
+- introverted: 话少、简洁、喜欢独处
+- calm: 冷静、理性、沉稳
+- energetic: 活力充沛、好动、热情
+- mysterious: 神秘、高冷、深不可测
+- friendly: 友善、温和、容易亲近
+- aloof: 冷漠、疏远、难以接近
+- playful: 爱玩、调皮、有趣
+
+请根据性格类型调整对话的长度和语气。内向的宠物应该话少，外向的宠物可以话多。
 
 直接返回对话内容，不要包含任何格式标记。`;
 
     const messages = [
-      { role: 'system', content: `你是${pet.name}，一个${pet.type}。请始终保持角色设定的一致性。` },
+      { role: 'system', content: `你是${pet.name}，一个${pet.type}。请始终保持角色设定的一致性。根据性格类型调整对话风格。` },
       { role: 'user', content: prompt }
     ];
 

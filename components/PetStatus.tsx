@@ -1,7 +1,7 @@
 'use client'
 
 import { Pet } from '../types'
-import { Heart, Zap, Coffee, Star, Crown, Settings, Battery, Droplets, Leaf, Sparkles } from 'lucide-react'
+import { Heart, Zap, Coffee, Star, Crown, Settings, Battery, Droplets, Leaf, Sparkles, User } from 'lucide-react'
 
 interface PetStatusProps {
   pet: Pet
@@ -54,6 +54,52 @@ export default function PetStatus({ pet }: PetStatusProps) {
     }
   }
 
+  const getPersonalityTypeLabel = (personalityType: string) => {
+    switch (personalityType) {
+      case 'extroverted':
+        return '外向'
+      case 'introverted':
+        return '内向'
+      case 'calm':
+        return '冷静'
+      case 'energetic':
+        return '活力'
+      case 'mysterious':
+        return '神秘'
+      case 'friendly':
+        return '友善'
+      case 'aloof':
+        return '冷漠'
+      case 'playful':
+        return '爱玩'
+      default:
+        return '未知'
+    }
+  }
+
+  const getPersonalityTypeColor = (personalityType: string) => {
+    switch (personalityType) {
+      case 'extroverted':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'introverted':
+        return 'bg-blue-100 text-blue-800'
+      case 'calm':
+        return 'bg-green-100 text-green-800'
+      case 'energetic':
+        return 'bg-red-100 text-red-800'
+      case 'mysterious':
+        return 'bg-purple-100 text-purple-800'
+      case 'friendly':
+        return 'bg-pink-100 text-pink-800'
+      case 'aloof':
+        return 'bg-gray-100 text-gray-800'
+      case 'playful':
+        return 'bg-orange-100 text-orange-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
   return (
     <div className="p-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -72,6 +118,14 @@ export default function PetStatus({ pet }: PetStatusProps) {
             <div className="flex items-center justify-center space-x-2 mb-2">
               {getPetTypeIcon(pet.petType)}
               <span className="text-sm text-gray-600">{getPetTypeLabel(pet.petType)}</span>
+            </div>
+
+            {/* 性格类型 */}
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <User className="w-4 h-4 text-gray-500" />
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPersonalityTypeColor(pet.personalityType)}`}>
+                {getPersonalityTypeLabel(pet.personalityType)}
+              </span>
             </div>
             
             <div className="flex items-center justify-center space-x-2">
@@ -202,20 +256,20 @@ export default function PetStatus({ pet }: PetStatusProps) {
               </div>
             </div>
 
-            {/* 饥饿度 */}
+            {/* 饱食度 */}
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-2">
                   <Coffee className="w-5 h-5 text-orange-500" />
-                  <span className="text-sm font-medium text-gray-700">饥饿</span>
+                  <span className="text-sm font-medium text-gray-700">饱食度</span>
                 </div>
-                <span className={`text-sm font-medium ${getStatusColor(100 - pet.hunger)}`}>
+                <span className={`text-sm font-medium ${getStatusColor(pet.hunger)}`}>
                   {pet.hunger}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className={`${getStatusBarColor(100 - pet.hunger)} h-2 rounded-full transition-all duration-300`}
+                  className={`${getStatusBarColor(pet.hunger)} h-2 rounded-full transition-all duration-300`}
                   style={{ width: `${pet.hunger}%` }}
                 ></div>
               </div>

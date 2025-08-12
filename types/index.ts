@@ -10,7 +10,7 @@ export interface Pet {
   health: number;
   happiness: number;
   energy: number;
-  hunger: number;
+  hunger: number; // 0-100，0=很饿，100=很饱
   level: number;
   experience: number;
   createdAt: Date;
@@ -19,6 +19,7 @@ export interface Pet {
   // 新增：宠物特定属性
   petType: 'animal' | 'robot' | 'plant' | 'magical' | 'food' | 'object';
   specialNeeds: string[]; // 特殊需求，如充电、浇水等
+  personalityType: 'extroverted' | 'introverted' | 'calm' | 'energetic' | 'mysterious' | 'friendly' | 'aloof' | 'playful';
 }
 
 export interface Task {
@@ -57,6 +58,14 @@ export interface Task {
   };
 }
 
+// 新增：计时器状态管理
+export interface TimerState {
+  taskId: string;
+  startTime: number;
+  duration: number;
+  isActive: boolean;
+}
+
 export interface Conversation {
   id: string;
   role: 'user' | 'assistant';
@@ -74,6 +83,7 @@ export interface GameState {
   currentStory: string;
   worldGenre: string;
   lastPetInteraction: Date; // 宠物上次主动互动的时间
+  activeTimers: TimerState[]; // 新增：活跃的计时器
 }
 
 export interface AIResponse {
