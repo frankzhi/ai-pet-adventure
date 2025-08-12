@@ -147,23 +147,12 @@ export class ImageAnalysisService {
       return this.simulateImageAnalysis(imageFile.name, '');
     }
   }
-} 
-  // 智能图像分析：优先使用OpenAI Vision，失败则回退到文件名分析
+}   // 智能图像分析：优先使用OpenAI Vision，失败则回退到文件名分析
   static async analyzeImageSmart(imageFile: File): Promise<ImageAnalysisResult> {
     try {
       // 首先尝试OpenAI Vision API
-      console.log('尝试使用OpenAI Vision API...');
+      console.log("尝试使用OpenAI Vision API...");
       const openaiResult = await this.analyzeImageWithOpenAI(imageFile);
       if (openaiResult && openaiResult.objects.length > 0) {
-        console.log('OpenAI Vision API分析成功');
+        console.log("OpenAI Vision API分析成功");
         return openaiResult;
-      }
-    } catch (error) {
-      console.log('OpenAI Vision API不可用，回退到文件名分析');
-    }
-    
-    // 回退到改进的文件名分析
-    console.log('使用改进的文件名分析...');
-    return this.simulateImageAnalysis(imageFile.name, '');
-  }
-}
