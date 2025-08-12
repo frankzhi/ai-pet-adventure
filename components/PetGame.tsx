@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react'
 import { GameState, Pet } from '../types'
 import { GameService } from '../lib/game-service'
-import { PetStatus } from './PetStatus'
-import { TaskList } from './TaskList'
-import { ChatInterface } from './ChatInterface'
+import PetStatus from './PetStatus'
+import TaskList from './TaskList'
+import ChatInterface from './ChatInterface'
 import { Heart, List, MessageCircle, RefreshCw, Trash2, Users } from 'lucide-react'
 
 interface PetGameProps {
