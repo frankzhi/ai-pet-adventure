@@ -8,33 +8,13 @@ export interface ImageAnalysisResult {
 }
 
 export class ImageAnalysisService {
-  // 使用免费的图像识别API (可选：OpenAI Vision API, Google Vision API等)
-  // 这里我们使用一个模拟的图像识别服务作为示例
-  static async analyzeImage(imageFile: File): Promise<ImageAnalysisResult> {
-    try {
-      // 将图片转换为base64
-      const base64Image = await this.fileToBase64(imageFile);
-      
-      // 这里可以集成真实的图像识别API
-      // 例如：OpenAI Vision API, Google Vision API, Azure Computer Vision等
-      
-      // 模拟图像识别结果（实际使用时替换为真实API调用）
-      const analysisResult = await this.simulateImageAnalysis(imageFile.name, base64Image);
-      
-      return analysisResult;
-    } catch (error) {
-      console.error('图像分析失败:', error);
-      throw new Error('图像分析失败，请重试');
-    }
-  }
-
-  private static async fileToBase64(file: File): Promise<string> {
+  // 将文件转换为Base64
+  static async fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => {
         const result = reader.result as string;
-        // 移除data:image/jpeg;base64,前缀
         const base64 = result.split(',')[1];
         resolve(base64);
       };
@@ -42,17 +22,13 @@ export class ImageAnalysisService {
     });
   }
 
-  private static async simulateImageAnalysis(fileName: string, base64Image: string): Promise<ImageAnalysisResult> {
-    // 模拟图像识别 - 基于文件名进行简单分析
-    // 实际使用时，这里应该调用真实的图像识别API
-    
+  // 模拟图像分析（基于文件名）
+  static simulateImageAnalysis(fileName: string, imageData: string): ImageAnalysisResult {
     const fileNameLower = fileName.toLowerCase();
-    
-    // 基于文件名的简单识别逻辑
-    let objects: string[] = [];
-    let colors: string[] = [];
-    let description = '';
-    
+    let objects: string[];
+    let colors: string[];
+    let description: string;
+
     if (fileNameLower.includes('cat') || fileNameLower.includes('猫')) {
       objects = ['猫', '动物', '宠物'];
       colors = ['橘色', '白色', '黑色'];
@@ -147,12 +123,28 @@ export class ImageAnalysisService {
       return this.simulateImageAnalysis(imageFile.name, '');
     }
   }
-}   // 智能图像分析：优先使用OpenAI Vision，失败则回退到文件名分析
+
+  // 智能图像分析：优先使用OpenAI Vision，失败则回退到文件名分析
   static async analyzeImageSmart(imageFile: File): Promise<ImageAnalysisResult> {
     try {
       // 首先尝试OpenAI Vision API
-      console.log("尝试使用OpenAI Vision API...");
+      console.log('尝试使用OpenAI Vision API...');
       const openaiResult = await this.analyzeImageWithOpenAI(imageFile);
       if (openaiResult && openaiResult.objects.length > 0) {
-        console.log("OpenAI Vision API分析成功");
+        console.log('OpenAI Vision API分析成功');
         return openaiResult;
+      }
+    } catch (error) {
+      console.log('OpenAI Vision API不可用，回退到文件名分析');
+    }
+
+    // 回退到改进的文件名分析
+    console.log('使用改进的文件名分析...');
+    return this.simulateImageAnalysis(imageFile.name, '');
+  }
+
+  // 主入口方法
+  static async analyzeImage(imageFile: File): Promise<ImageAnalysisResult> {
+    return this.analyzeImageSmart(imageFile);
+  }
+}
