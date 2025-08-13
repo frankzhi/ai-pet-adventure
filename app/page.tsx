@@ -38,8 +38,8 @@ export default function Home() {
       }
     };
 
-    // 每5分钟更新一次宠物状态
-    const statusInterval = setInterval(updateStatus, 5 * 60 * 1000);
+    // 每1分钟更新一次宠物状态
+    const statusInterval = setInterval(updateStatus, 1 * 60 * 1000);
     
     return () => clearInterval(statusInterval);
   }, [gameState]);

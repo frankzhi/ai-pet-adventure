@@ -229,26 +229,25 @@ export class GameService {
     this.saveGameState(gameState);
   }
 
-  // 检查所有计时器状态，自动完成到期的计时器
+  // 检查所有计时器状态，标记到期的计时器但不移除
   static checkAllTimers(): void {
     const gameState = this.loadGameState();
     if (!gameState) return;
 
     const now = Date.now();
-    const completedTimers: string[] = [];
+    let hasChanges = false;
 
     gameState.activeTimers.forEach(timer => {
       const elapsed = now - timer.startTime;
-      if (elapsed >= timer.duration) {
-        // 标记计时器完成，但不自动完成任务
+      if (elapsed >= timer.duration && !timer.completedAt) {
+        // 标记计时器完成，但不移除
         timer.completedAt = now;
-        completedTimers.push(timer.taskId);
+        hasChanges = true;
       }
     });
 
-    // 移除已完成的计时器
-    if (completedTimers.length > 0) {
-      gameState.activeTimers = gameState.activeTimers.filter(t => !completedTimers.includes(t.taskId));
+    // 只有在有变化时才保存
+    if (hasChanges) {
       this.saveGameState(gameState);
     }
   }
@@ -697,13 +696,13 @@ export class GameService {
         gameState.currentStory += `\n💔 ${pet.name}因为健康值过低而离开了...`;
       }
 
-      // 生成随机事件（每30分钟一次）
+      // 生成随机事件（每10分钟一次）
       const lastEventTime = gameState.randomEvents.length > 0 
         ? new Date(gameState.randomEvents[gameState.randomEvents.length - 1].timestamp)
         : new Date(0);
       const minutesSinceLastEvent = (now.getTime() - lastEventTime.getTime()) / (1000 * 60);
       
-      if (minutesSinceLastEvent >= 30) {
+      if (minutesSinceLastEvent >= 10) {
         const randomEvent = this.generateRandomEvent(pet);
         if (randomEvent) {
           gameState.randomEvents.push(randomEvent);

@@ -103,6 +103,7 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
       const result = GameService.completeTask(taskId, completionData);
       
       if (result.success) {
+        // 立即更新游戏状态
         onTaskComplete(taskId, completionData);
         setActiveTaskId(null);
         setConversationInput('');
@@ -110,6 +111,9 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
         setTaskAttempts(prev => ({ ...prev, [taskId]: 0 }));
         setTaskHints(prev => ({ ...prev, [taskId]: '' }));
         setShowFailureMessage(prev => ({ ...prev, [taskId]: false }));
+        
+        // 显示成功消息
+        alert(`任务完成！${result.message}`);
       } else {
         // 任务失败，显示错误信息
         const attempts = (taskAttempts[taskId] || 0) + 1;
@@ -166,9 +170,29 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
     // 检查是否有活跃的计时器
     const timerState = timerStates[task.id];
     const hasActiveTimer = timerState && !timerState.isComplete;
+    const hasCompletedTimer = timerState && timerState.isComplete;
     const attempts = taskAttempts[task.id] || 0;
     const hint = taskHints[task.id] || '';
     const showFailure = showFailureMessage[task.id] || false;
+
+    // 如果计时器已完成，显示确认完成按钮
+    if (task.completionMethod === 'timer' && hasCompletedTimer) {
+      return (
+        <div className="ml-4 flex flex-col space-y-2">
+          <div className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center space-x-2">
+            <CheckCircle className="w-4 h-4" />
+            <span>计时完成！</span>
+          </div>
+          <button
+            onClick={() => handleTaskComplete(task.id, { duration: task.timerTask?.duration || 0 })}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          >
+            <CheckCircle className="w-4 h-4" />
+            <span>确认完成</span>
+          </button>
+        </div>
+      );
+    }
 
     if (activeTaskId !== task.id && !hasActiveTimer) {
       return (
@@ -207,34 +231,15 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
       
       case 'timer':
         if (timerState) {
-          if (timerState.isComplete) {
-            // 计时器完成，显示确认完成按钮
-            return (
-              <div className="ml-4 flex flex-col space-y-2">
-                <div className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4" />
-                  <span>计时完成！</span>
-                </div>
-                <button
-                  onClick={() => handleTaskComplete(task.id, { duration: task.timerTask?.duration || 0 })}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>确认完成</span>
-                </button>
-              </div>
-            );
-          } else {
-            // 计时器进行中
-            const minutes = Math.floor(timerState.remaining / 60000);
-            const seconds = Math.floor((timerState.remaining % 60000) / 1000);
-            return (
-              <div className="ml-4 px-4 py-2 bg-yellow-600 text-white rounded-lg flex items-center space-x-2">
-                <Timer className="w-4 h-4" />
-                <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
-              </div>
-            );
-          }
+          // 计时器进行中
+          const minutes = Math.floor(timerState.remaining / 60000);
+          const seconds = Math.floor((timerState.remaining % 60000) / 1000);
+          return (
+            <div className="ml-4 px-4 py-2 bg-yellow-600 text-white rounded-lg flex items-center space-x-2">
+              <Timer className="w-4 h-4" />
+              <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
+            </div>
+          );
         }
         return null;
       
