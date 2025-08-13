@@ -408,7 +408,8 @@ export class GameService {
       activePet.energy = Math.min(100, activePet.energy + task.reward.energy);
     }
     if (task.reward.hunger !== undefined) {
-      activePet.hunger = Math.max(0, activePet.hunger + task.reward.hunger);
+      // 饱食度：0=很饿，100=很饱，所以增加饱食度就是减少饥饿感
+      activePet.hunger = Math.min(100, Math.max(0, activePet.hunger + task.reward.hunger));
     }
 
     // 检查升级

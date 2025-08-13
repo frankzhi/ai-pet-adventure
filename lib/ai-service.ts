@@ -58,17 +58,28 @@ export class AIService {
       };
     }
 
-    // 食物类型
+    // 食物/饮料类型
     if (typeLower.includes('奶茶') || typeLower.includes('咖啡') || typeLower.includes('蛋糕') ||
-        nameLower.includes('奶茶') || nameLower.includes('咖啡') || nameLower.includes('蛋糕')) {
+        typeLower.includes('饮料') || typeLower.includes('茶') || typeLower.includes('果汁') ||
+        nameLower.includes('奶茶') || nameLower.includes('咖啡') || nameLower.includes('蛋糕') ||
+        nameLower.includes('红茶') || nameLower.includes('绿茶') || nameLower.includes('果汁')) {
       return {
         petType: 'food',
         specialNeeds: ['保鲜', '温度控制', '配料补充']
       };
     }
 
-    // 魔法类型
-    if (typeLower.includes('魔法') || typeLower.includes('精灵') || typeLower.includes('龙') ||
+    // 日常物品类型
+    if (typeLower.includes('纸巾') || typeLower.includes('书本') || typeLower.includes('玩具') ||
+        nameLower.includes('纸巾') || nameLower.includes('书本') || nameLower.includes('玩具')) {
+      return {
+        petType: 'object',
+        specialNeeds: ['清洁', '保养', '存放']
+      };
+    }
+
+    // 魔法类型（只有在明确提到魔法相关时才使用）
+    if (typeLower.includes('魔法') || typeLower.includes('龙') ||
         charsLower.some(c => c.includes('魔法') || c.includes('神秘'))) {
       return {
         petType: 'magical',
@@ -95,7 +106,7 @@ export class AIService {
   ): Promise<Pet> {
     const personalityType = this.generatePersonalityType();
     
-    const prompt = `你是一个创意作家，需要根据图像分析结果创建一个独特的电子宠物角色。
+    const prompt = `你是一个有趣的创意作家，需要根据图像分析结果创建一个独特的电子宠物角色。
 
 图像分析结果：
 - 识别物体: ${imageAnalysis.objects.join(', ')}
@@ -110,10 +121,10 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
 请基于上述图像分析结果，创建一个完整的宠物角色设定。宠物应该与识别出的物体、颜色和特征高度相关。
 
 请创建一个完整的宠物角色设定，包括：
-1. 世界设定（可以是科幻、奇幻、现实、神话等任何风格，但要与识别内容相关）
-2. 背景故事（宠物的来历、特殊能力等，要与识别出的物体和特征相关）
+1. 世界设定（可以是科幻、奇幻、现实、神话等任何风格，但要与识别内容相关，风格要轻松有趣）
+2. 背景故事（宠物的来历、特殊能力等，要与识别出的物体和特征相关，要有趣但不严肃）
 3. 性格特征（3-5个关键词，体现识别物体的特点和指定的性格类型）
-4. 个性描述（一段话描述，要基于识别内容和性格类型）
+4. 个性描述（一段话描述，要基于识别内容和性格类型，语言要日常化、风趣幽默）
 
 性格类型说明：
 - extroverted: 外向、话多、喜欢社交
@@ -135,7 +146,12 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
   "personality": "个性描述"
 }
 
-重要：请确保宠物设定与图像分析结果高度相关，并根据指定的性格类型来设计角色。每个宠物都应该是独特的，基于识别出的具体内容和性格类型。`;
+重要要求：
+1. 宠物设定要与图像分析结果高度相关，不要生成什么"精灵"、"能量体"等抽象概念
+2. 如果用户输入的是具体物体（如"一瓶冰红茶"），就直接基于这个物体来设定，不要变成什么"红茶精灵"
+3. 语言风格要日常化、风趣幽默，不要过于文学化或严肃
+4. 每个宠物都应该是独特的，基于识别出的具体内容和性格类型
+5. 世界设定可以是任何风格，但整体基调要轻松有趣`;
 
     const messages = [
       { role: 'system', content: '你是一个创意作家，专门创作有趣的电子宠物角色设定。请确保每个角色都是独特的，基于图像分析的具体结果和指定的性格类型。' },
@@ -471,10 +487,12 @@ ${conversationHistory}
 请以${pet.name}的身份回应，保持角色设定的一致性。回应要自然、有趣，符合宠物的性格特点。
 
 重要要求：
-1. 根据性格类型调整回应的长度和语气
-2. 内向的宠物应该话少，外向的宠物可以话多
-3. 在回应中描述宠物的肢体动作，让互动更有代入感
-4. 不要主动发起新的对话，只回应用户的输入
+1. 语言风格要日常化、风趣幽默，不要过于文学化或严肃
+2. 根据性格类型调整回应的长度和语气
+3. 内向的宠物应该话少，外向的宠物可以话多
+4. 在回应中描述宠物的肢体动作，让互动更有代入感
+5. 不要主动发起新的对话，只回应用户的输入
+6. 整体基调要轻松有趣，可以是无厘头的、搞笑的
 
 性格类型指导：
 - extroverted: 话多、热情、喜欢分享，会有很多肢体动作

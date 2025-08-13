@@ -112,8 +112,15 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
         setTaskHints(prev => ({ ...prev, [taskId]: '' }));
         setShowFailureMessage(prev => ({ ...prev, [taskId]: false }));
         
-        // 显示成功消息
-        alert(`任务完成！${result.message}`);
+        // 显示成功消息，包含详细的奖励信息
+        const task = tasks.find(t => t.id === taskId);
+        let rewardMessage = `任务完成！获得 ${task?.reward.experience || 0} 经验值`;
+        if (task?.reward.happiness) rewardMessage += `，快乐 +${task.reward.happiness}`;
+        if (task?.reward.health) rewardMessage += `，健康 +${task.reward.health}`;
+        if (task?.reward.energy) rewardMessage += `，能量 +${task.reward.energy}`;
+        if (task?.reward.hunger) rewardMessage += `，饱食度 ${task.reward.hunger > 0 ? '+' : ''}${task.reward.hunger}`;
+        
+        alert(rewardMessage);
       } else {
         // 任务失败，显示错误信息
         const attempts = (taskAttempts[taskId] || 0) + 1;
