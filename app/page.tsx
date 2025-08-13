@@ -25,6 +25,25 @@ export default function Home() {
     setLoading(false)
   }, [])
 
+  // 定期更新宠物状态
+  useEffect(() => {
+    if (!gameState) return;
+
+    const updateStatus = async () => {
+      try {
+        await GameService.updatePetStatus();
+        setGameState(GameService.loadGameState());
+      } catch (error) {
+        console.error('更新宠物状态失败:', error);
+      }
+    };
+
+    // 每5分钟更新一次宠物状态
+    const statusInterval = setInterval(updateStatus, 5 * 60 * 1000);
+    
+    return () => clearInterval(statusInterval);
+  }, [gameState]);
+
   // 全局主动互动检查
   useEffect(() => {
     if (!gameState) return;

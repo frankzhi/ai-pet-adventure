@@ -13,7 +13,7 @@ interface TaskListProps {
 export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
   const [conversationInput, setConversationInput] = useState('')
-  const [timerStates, setTimerStates] = useState<{[key: string]: { elapsed: number; remaining: number; isComplete: boolean }}>({})
+  const [timerStates, setTimerStates] = useState<{[key: string]: { elapsed: number; remaining: number; isComplete: boolean; canComplete: boolean }}>({})
   const [taskAttempts, setTaskAttempts] = useState<{[key: string]: number}>({})
   const [taskHints, setTaskHints] = useState<{[key: string]: string}>({})
   const [showFailureMessage, setShowFailureMessage] = useState<{[key: string]: boolean}>({})
@@ -24,18 +24,13 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
       // 检查所有计时器状态
       GameService.checkAllTimers();
       
-      const newTimerStates: {[key: string]: { elapsed: number; remaining: number; isComplete: boolean }} = {};
+      const newTimerStates: {[key: string]: { elapsed: number; remaining: number; isComplete: boolean; canComplete: boolean }} = {};
       
       tasks.forEach(task => {
         if (task.completionMethod === 'timer') {
           const progress = GameService.getTimerProgress(task.id);
           if (progress) {
             newTimerStates[task.id] = progress;
-            
-            // 如果计时器完成，自动完成任务
-            if (progress.isComplete && !task.isCompleted) {
-              handleTaskComplete(task.id, { duration: task.timerTask?.duration || 0 });
-            }
           }
         }
       });
@@ -212,14 +207,34 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
       
       case 'timer':
         if (timerState) {
-          const minutes = Math.floor(timerState.remaining / 60000);
-          const seconds = Math.floor((timerState.remaining % 60000) / 1000);
-          return (
-            <div className="ml-4 px-4 py-2 bg-yellow-600 text-white rounded-lg flex items-center space-x-2">
-              <Timer className="w-4 h-4" />
-              <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
-            </div>
-          );
+          if (timerState.isComplete) {
+            // 计时器完成，显示确认完成按钮
+            return (
+              <div className="ml-4 flex flex-col space-y-2">
+                <div className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>计时完成！</span>
+                </div>
+                <button
+                  onClick={() => handleTaskComplete(task.id, { duration: task.timerTask?.duration || 0 })}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>确认完成</span>
+                </button>
+              </div>
+            );
+          } else {
+            // 计时器进行中
+            const minutes = Math.floor(timerState.remaining / 60000);
+            const seconds = Math.floor((timerState.remaining % 60000) / 1000);
+            return (
+              <div className="ml-4 px-4 py-2 bg-yellow-600 text-white rounded-lg flex items-center space-x-2">
+                <Timer className="w-4 h-4" />
+                <span>{minutes}:{seconds.toString().padStart(2, '0')}</span>
+              </div>
+            );
+          }
         }
         return null;
       

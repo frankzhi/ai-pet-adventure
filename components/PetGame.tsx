@@ -6,7 +6,8 @@ import { GameService } from '../lib/game-service'
 import PetStatus from './PetStatus'
 import TaskList from './TaskList'
 import ChatInterface from './ChatInterface'
-import { Heart, List, MessageCircle, RefreshCw, Trash2, Users } from 'lucide-react'
+import EventLog from './EventLog'
+import { Heart, List, MessageCircle, RefreshCw, Trash2, Users, BookOpen } from 'lucide-react'
 
 interface PetGameProps {
   gameState: GameState
@@ -15,7 +16,7 @@ interface PetGameProps {
 }
 
 export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: PetGameProps) {
-  const [activeTab, setActiveTab] = useState<'status' | 'tasks' | 'chat'>('status')
+  const [activeTab, setActiveTab] = useState<'status' | 'tasks' | 'chat' | 'events'>('status')
   const [currentStory, setCurrentStory] = useState('')
   const [activePet, setActivePet] = useState<Pet | null>(null)
 
@@ -61,6 +62,7 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
     { id: 'status', label: '宠物状态', icon: Heart },
     { id: 'tasks', label: '任务列表', icon: List },
     { id: 'chat', label: '对话互动', icon: MessageCircle },
+    { id: 'events', label: '事件日志', icon: BookOpen },
   ]
 
   if (!activePet) {
@@ -183,6 +185,9 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
             conversations={gameState.conversations}
             onGameStateUpdate={onGameStateUpdate}
           />
+        )}
+        {activeTab === 'events' && (
+          <EventLog />
         )}
       </div>
     </div>

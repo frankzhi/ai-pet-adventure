@@ -672,10 +672,15 @@ export class GameService {
       const hoursSinceLastInteraction = (now.getTime() - lastInteraction.getTime()) / (1000 * 60 * 60);
 
       // 根据时间流逝更新状态（降低更新频率）
-      if (hoursSinceLastInteraction > 2) {
-        pet.hunger = Math.max(0, pet.hunger - hoursSinceLastInteraction * 2); // 饱食度减少
-        pet.energy = Math.max(0, pet.energy - hoursSinceLastInteraction * 1);
-        pet.happiness = Math.max(0, pet.happiness - hoursSinceLastInteraction * 0.5);
+      if (hoursSinceLastInteraction > 1) {
+        pet.hunger = Math.max(0, pet.hunger - hoursSinceLastInteraction * 3); // 饱食度减少
+        pet.energy = Math.max(0, pet.energy - hoursSinceLastInteraction * 2);
+        pet.happiness = Math.max(0, pet.happiness - hoursSinceLastInteraction * 1);
+        
+        // 健康值衰减机制：当快乐/能量/饱食度低于10%时，健康值逐渐降低
+        if (pet.happiness < 10 || pet.energy < 10 || pet.hunger < 10) {
+          pet.health = Math.max(0, pet.health - hoursSinceLastInteraction * 2);
+        }
       }
 
       // 更新心情
@@ -686,23 +691,30 @@ export class GameService {
       else if (pet.happiness > 80) pet.mood = 'happy';
       else pet.mood = 'neutral';
 
-      // 检查宠物是否死亡
-      if (pet.health <= 0 || pet.happiness <= 0) {
+      // 检查宠物是否死亡（健康值为0时死亡）
+      if (pet.health <= 0) {
         pet.isAlive = false;
-        gameState.currentStory += `\n💔 ${pet.name}因为缺乏照顾而离开了...`;
+        gameState.currentStory += `\n💔 ${pet.name}因为健康值过低而离开了...`;
       }
 
-      // 生成随机事件
-      const randomEvent = this.generateRandomEvent(pet);
-      if (randomEvent) {
-        gameState.randomEvents.push(randomEvent);
-        
-        // 应用事件效果
-        if (randomEvent.effect.happiness) pet.happiness = Math.min(100, Math.max(0, pet.happiness + randomEvent.effect.happiness));
-        if (randomEvent.effect.health) pet.health = Math.min(100, Math.max(0, pet.health + randomEvent.effect.health));
-        if (randomEvent.effect.energy) pet.energy = Math.min(100, Math.max(0, pet.energy + randomEvent.effect.energy));
-        if (randomEvent.effect.hunger) pet.hunger = Math.min(100, Math.max(0, pet.hunger + randomEvent.effect.hunger));
-        if (randomEvent.effect.experience) pet.experience += randomEvent.effect.experience;
+      // 生成随机事件（每30分钟一次）
+      const lastEventTime = gameState.randomEvents.length > 0 
+        ? new Date(gameState.randomEvents[gameState.randomEvents.length - 1].timestamp)
+        : new Date(0);
+      const minutesSinceLastEvent = (now.getTime() - lastEventTime.getTime()) / (1000 * 60);
+      
+      if (minutesSinceLastEvent >= 30) {
+        const randomEvent = this.generateRandomEvent(pet);
+        if (randomEvent) {
+          gameState.randomEvents.push(randomEvent);
+          
+          // 应用事件效果
+          if (randomEvent.effect.happiness) pet.happiness = Math.min(100, Math.max(0, pet.happiness + randomEvent.effect.happiness));
+          if (randomEvent.effect.health) pet.health = Math.min(100, Math.max(0, pet.health + randomEvent.effect.health));
+          if (randomEvent.effect.energy) pet.energy = Math.min(100, Math.max(0, pet.energy + randomEvent.effect.energy));
+          if (randomEvent.effect.hunger) pet.hunger = Math.min(100, Math.max(0, pet.hunger + randomEvent.effect.hunger));
+          if (randomEvent.effect.experience) pet.experience += randomEvent.effect.experience;
+        }
       }
 
       // 更新宠物活动
