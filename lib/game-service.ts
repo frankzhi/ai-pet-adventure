@@ -456,8 +456,11 @@ export class GameService {
       hunger: activePet.hunger
     });
     
+    console.log("应用经验值奖励:", task.reward.experience);
     activePet.experience += task.reward.experience;
+    console.log("应用快乐度奖励:", task.reward.happiness);
     activePet.happiness = Math.min(100, activePet.happiness + task.reward.happiness);
+    console.log("应用健康值奖励:", task.reward.health);
     activePet.health = Math.min(100, activePet.health + task.reward.health);
     
     if (task.reward.energy !== undefined) {
