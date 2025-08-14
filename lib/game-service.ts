@@ -445,6 +445,14 @@ export class GameService {
     const oldExperience = activePet.experience;
 
     // 应用奖励
+    console.log('任务完成前状态:', {
+      experience: activePet.experience,
+      happiness: activePet.happiness,
+      health: activePet.health,
+      energy: activePet.energy,
+      hunger: activePet.hunger
+    });
+    
     activePet.experience += task.reward.experience;
     activePet.happiness = Math.min(100, activePet.happiness + task.reward.happiness);
     activePet.health = Math.min(100, activePet.health + task.reward.health);
@@ -456,6 +464,14 @@ export class GameService {
       // 饱食度：0=很饿，100=很饱，所以增加饱食度就是减少饥饿感
       activePet.hunger = Math.min(100, Math.max(0, activePet.hunger + task.reward.hunger));
     }
+    
+    console.log('任务完成后状态:', {
+      experience: activePet.experience,
+      happiness: activePet.happiness,
+      health: activePet.health,
+      energy: activePet.energy,
+      hunger: activePet.hunger
+    });
 
     // 记录状态变化到活动日志
     const statusChanges = [];

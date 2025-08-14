@@ -61,8 +61,10 @@ export class AIService {
     // 食物/饮料类型
     if (typeLower.includes('奶茶') || typeLower.includes('咖啡') || typeLower.includes('蛋糕') ||
         typeLower.includes('饮料') || typeLower.includes('茶') || typeLower.includes('果汁') ||
+        typeLower.includes('能量') || typeLower.includes('精灵') || typeLower.includes('液态') ||
         nameLower.includes('奶茶') || nameLower.includes('咖啡') || nameLower.includes('蛋糕') ||
-        nameLower.includes('红茶') || nameLower.includes('绿茶') || nameLower.includes('果汁')) {
+        nameLower.includes('红茶') || nameLower.includes('绿茶') || nameLower.includes('果汁') ||
+        nameLower.includes('宝矿力') || nameLower.includes('能量') || nameLower.includes('水特')) {
       return {
         petType: 'food',
         specialNeeds: ['保鲜', '温度控制', '配料补充']
@@ -147,13 +149,11 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
 }
 
 重要要求：
-1. 宠物设定要与图像分析结果高度相关，不要生成什么"精灵"、"能量体"、"元素形态"等抽象概念
-2. 如果用户输入的是具体物体（如"一瓶冰红茶"），就直接基于这个物体来设定，不要变成什么"红茶精灵"、"能量体"、"元素形态"
+1. 宠物设定要与图像分析结果高度相关，不要生成"精灵"、"能量体"、"元素形态"等抽象概念
+2. 如果用户输入的是具体物体（如"一瓶冰红茶"），就直接基于这个物体来设定，不要变成"红茶精灵"等抽象概念
 3. 宠物应该就是那个具体的物体或生物，具有该物体/生物的特征和习性
 4. 语言风格要日常化、风趣幽默，不要过于文学化或严肃
-5. 每个宠物都应该是独特的，基于识别出的具体内容和性格类型
-6. 世界设定可以是任何风格，但整体基调要轻松有趣
-7. 绝对禁止使用"精灵"、"能量体"、"元素形态"、"概念化"等抽象词汇`;
+5. 绝对禁止使用"精灵"、"能量体"、"元素形态"、"概念化"等抽象词汇`;
 
     const messages = [
       { role: 'system', content: '你是一个创意作家，专门创作有趣的电子宠物角色设定。请确保每个角色都是独特的，基于图像分析的具体结果和指定的性格类型。' },
@@ -494,9 +494,7 @@ ${conversationHistory}
 3. 内向的宠物应该话少，外向的宠物可以话多
 4. 在回应中描述宠物的肢体动作，让互动更有代入感
 5. 不要主动发起新的对话，只回应用户的输入
-6. 整体基调要轻松有趣，可以是无厘头的、搞笑的
-7. 宠物就是具体的物体或生物，不要使用"精灵"、"能量体"、"元素形态"等抽象概念
-8. 保持宠物的具体特征，比如如果是冰红茶，就保持饮料的特征
+6. 宠物就是具体的物体或生物，不要使用"精灵"、"能量体"、"元素形态"等抽象概念
 
 性格类型指导：
 - extroverted: 话多、热情、喜欢分享，会有很多肢体动作
