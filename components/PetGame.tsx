@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { GameState, Pet } from '../types'
+import React, { useState, useEffect } from 'react'
+import { Heart, List, MessageCircle, BookOpen, RefreshCw, Trash2, Users } from 'lucide-react'
+import { Pet, GameState } from '../types'
 import { GameService } from '../lib/game-service'
 import PetStatus from './PetStatus'
 import TaskList from './TaskList'
 import ChatInterface from './ChatInterface'
 import EventLog from './EventLog'
-import { Heart, List, MessageCircle, RefreshCw, Trash2, Users, BookOpen } from 'lucide-react'
 
 interface PetGameProps {
   gameState: GameState
@@ -19,7 +19,9 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
   const [activeTab, setActiveTab] = useState<'status' | 'tasks' | 'chat' | 'events'>('status')
   const [currentStory, setCurrentStory] = useState('')
   const [activePet, setActivePet] = useState<Pet | null>(null)
+  const [forceUpdate, setForceUpdate] = useState(0) // 强制更新计数器
 
+  // 每次gameState变化时，强制重新获取数据
   useEffect(() => {
     console.log('PetGame: gameState变化，重新获取数据', gameState);
     const newCurrentStory = GameService.getCurrentStory()
@@ -27,13 +29,20 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
     console.log('PetGame: 获取到的新数据', { newCurrentStory, newActivePet });
     setCurrentStory(newCurrentStory)
     setActivePet(newActivePet)
-  }, [gameState])
+    // 强制触发重新渲染
+    setForceUpdate(prev => prev + 1)
+  }, [gameState, forceUpdate])
 
   const handleTaskComplete = (taskId: string, completionData?: any) => {
-    // TaskList组件已经调用了GameService.completeTask，这里只需要更新UI
     console.log('PetGame: handleTaskComplete被调用', taskId);
     onGameStateUpdate()
     console.log('PetGame: onGameStateUpdate已调用');
+    // 立即强制更新本地状态
+    setTimeout(() => {
+      const updatedPet = GameService.getActivePet()
+      console.log('PetGame: 强制更新后的pet数据', updatedPet);
+      setActivePet(updatedPet)
+    }, 100)
   }
 
   const handleResetDailyTasks = () => {
@@ -185,7 +194,7 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
                 className={`flex items-center space-x-2 px-6 py-4 font-medium transition-colors ${
                   activeTab === tab.id
                     ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
+                    : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -194,29 +203,29 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
             )
           })}
         </div>
-      </div>
 
-      {/* 标签页内容 */}
-      <div className="bg-white rounded-lg shadow-lg">
-        {activeTab === 'status' && (
-          <PetStatus pet={activePet} />
-        )}
-        {activeTab === 'tasks' && (
-          <TaskList 
-            tasks={gameState.tasks}
-            onTaskComplete={handleTaskComplete}
-          />
-        )}
-        {activeTab === 'chat' && (
-          <ChatInterface 
-            pet={activePet}
-            conversations={gameState.conversations}
-            onGameStateUpdate={onGameStateUpdate}
-          />
-        )}
-        {activeTab === 'events' && (
-          <EventLog />
-        )}
+        {/* 标签页内容 */}
+        <div className="p-6">
+          {activeTab === 'status' && activePet && (
+            <PetStatus key={`${activePet.id}-${forceUpdate}`} pet={activePet} />
+          )}
+          {activeTab === 'tasks' && (
+            <TaskList 
+              tasks={gameState.tasks} 
+              onTaskComplete={handleTaskComplete}
+            />
+          )}
+          {activeTab === 'chat' && activePet && (
+            <ChatInterface 
+              pet={activePet}
+              conversations={gameState.conversations}
+              onGameStateUpdate={onGameStateUpdate}
+            />
+          )}
+          {activeTab === 'events' && (
+            <EventLog />
+          )}
+        </div>
       </div>
     </div>
   )
