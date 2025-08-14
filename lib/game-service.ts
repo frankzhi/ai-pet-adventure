@@ -151,10 +151,13 @@ export class GameService {
   }
 
   static getActivePet(): Pet | null {
+    console.log("GameService: getActivePet被调用");
     const gameState = this.loadGameState();
     if (!gameState) return null;
     
-    return gameState.pets.find(pet => pet.id === gameState.activePetId) || null;
+    const activePet = gameState.pets.find(pet => pet.id === gameState.activePetId) || null;
+    console.log("GameService: getActivePet返回", activePet);
+    return activePet;
   }
 
   // 检查是否有活着的宠物
@@ -513,6 +516,7 @@ export class GameService {
     }
 
     // 立即保存状态
+    console.log("GameService: 保存状态后的activePet", activePet);
     this.saveGameState(gameState);
     
     return { 

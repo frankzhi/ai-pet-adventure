@@ -19,7 +19,7 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
   const [activeTab, setActiveTab] = useState<'status' | 'tasks' | 'chat' | 'events'>('status')
   const [currentStory, setCurrentStory] = useState('')
   const [activePet, setActivePet] = useState<Pet | null>(null)
-  const [forceUpdate, setForceUpdate] = useState(0) // 强制更新计数器
+  // 移除forceUpdate状态 // 强制更新计数器
 
   // 每次gameState变化时，强制重新获取数据
   useEffect(() => {
@@ -29,19 +29,14 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
     console.log('PetGame: 获取到的新数据', { newCurrentStory, newActivePet });
     setCurrentStory(newCurrentStory)
     setActivePet(newActivePet)
-    // 强制触发重新渲染
     setForceUpdate(prev => prev + 1)
-  }, [gameState, forceUpdate])
+    setForceUpdate(prev => prev + 1)
+  }, [gameState])
 
   const handleTaskComplete = (taskId: string, completionData?: any) => {
     console.log('PetGame: handleTaskComplete被调用', taskId);
     onGameStateUpdate()
     console.log('PetGame: onGameStateUpdate已调用');
-    // 立即强制更新本地状态
-    setTimeout(() => {
-      const updatedPet = GameService.getActivePet()
-      console.log('PetGame: 强制更新后的pet数据', updatedPet);
-      setActivePet(updatedPet)
     }, 100)
   }
 
@@ -207,7 +202,7 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
         {/* 标签页内容 */}
         <div className="p-6">
           {activeTab === 'status' && activePet && (
-            <PetStatus key={`${activePet.id}-${forceUpdate}`} pet={activePet} />
+            <PetStatus key={activePet.id} pet={activePet} />
           )}
           {activeTab === 'tasks' && (
             <TaskList 
