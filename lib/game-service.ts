@@ -287,7 +287,7 @@ export class GameService {
     }
 
     const activePetIndex = gameState.pets.findIndex(pet => pet.id === gameState.activePetId);
-    if (activePetIndex === -1) return { success: false, message: "宠物未找到" };
+    if (activePetIndex === -1) return { content: "宠物未找到", action: "静静地躺着" };
     const activePet = gameState.pets[activePetIndex];
     if (!activePet) {
       throw new Error('没有找到活跃的宠物');
@@ -368,7 +368,7 @@ export class GameService {
     if (!task || task.isCompleted) return { success: false, message: '任务不存在或已完成' };
 
     const activePetIndex = gameState.pets.findIndex(pet => pet.id === gameState.activePetId);
-    if (activePetIndex === -1) return { success: false, message: "宠物未找到" };
+    if (activePetIndex === -1) return { success: false, message: '宠物未找到' };
     const activePet = gameState.pets[activePetIndex];
     if (!activePet) return { success: false, message: '宠物未找到' };
 
@@ -523,14 +523,13 @@ export class GameService {
     }
 
     // 立即保存状态
-    // 验证状态是否正确保存
-    const savedPet = this.getActivePet();
+    // 验证状态是否正确保存 - 直接使用gameState.pets数组中的对象
     console.log("保存后立即获取的宠物状态:", {
-      experience: savedPet?.experience,
-      happiness: savedPet?.happiness,
-      health: savedPet?.health,
-      energy: savedPet?.energy,
-      hunger: savedPet?.hunger
+      experience: gameState.pets[activePetIndex].experience,
+      happiness: gameState.pets[activePetIndex].happiness,
+      health: gameState.pets[activePetIndex].health,
+      energy: gameState.pets[activePetIndex].energy,
+      hunger: gameState.pets[activePetIndex].hunger
     });
     console.log("GameService: 保存状态后的activePet", activePet);
     this.saveGameState(gameState);
@@ -547,7 +546,7 @@ export class GameService {
     if (!gameState) return null;
 
     const activePetIndex = gameState.pets.findIndex(pet => pet.id === gameState.activePetId);
-    if (activePetIndex === -1) return { success: false, message: "宠物未找到" };
+    if (activePetIndex === -1) return null;
     const activePet = gameState.pets[activePetIndex];
     if (!activePet) return null;
 
@@ -874,7 +873,13 @@ export class GameService {
   }
 
   static getPetStatus(): Pet | null {
-    return this.getActivePet();
+    const gameState = this.loadGameState();
+    if (!gameState) return null;
+    
+    const activePetIndex = gameState.pets.findIndex(pet => pet.id === gameState.activePetId);
+    if (activePetIndex === -1) return null;
+    
+    return gameState.pets[activePetIndex];
   }
 
   static getAllPets(): Pet[] {
@@ -928,7 +933,7 @@ export class GameService {
     if (!gameState) return;
 
     const activePetIndex = gameState.pets.findIndex(pet => pet.id === gameState.activePetId);
-    if (activePetIndex === -1) return { success: false, message: "宠物未找到" };
+    if (activePetIndex === -1) return;
     const activePet = gameState.pets[activePetIndex];
     if (!activePet) return;
 
