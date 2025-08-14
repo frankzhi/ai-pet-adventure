@@ -286,7 +286,9 @@ export class GameService {
       throw new Error('没有找到游戏状态');
     }
 
-    const activePet = this.getActivePet();
+    const activePetIndex = gameState.pets.findIndex(pet => pet.id === gameState.activePetId);
+    if (activePetIndex === -1) return { success: false, message: "宠物未找到" };
+    const activePet = gameState.pets[activePetIndex];
     if (!activePet) {
       throw new Error('没有找到活跃的宠物');
     }
@@ -365,7 +367,9 @@ export class GameService {
     const task = gameState.tasks.find(t => t.id === taskId);
     if (!task || task.isCompleted) return { success: false, message: '任务不存在或已完成' };
 
-    const activePet = this.getActivePet();
+    const activePetIndex = gameState.pets.findIndex(pet => pet.id === gameState.activePetId);
+    if (activePetIndex === -1) return { success: false, message: "宠物未找到" };
+    const activePet = gameState.pets[activePetIndex];
     if (!activePet) return { success: false, message: '宠物未找到' };
 
     // 检查宠物是否还活着
@@ -542,7 +546,9 @@ export class GameService {
     const gameState = this.loadGameState();
     if (!gameState) return null;
 
-    const activePet = this.getActivePet();
+    const activePetIndex = gameState.pets.findIndex(pet => pet.id === gameState.activePetId);
+    if (activePetIndex === -1) return { success: false, message: "宠物未找到" };
+    const activePet = gameState.pets[activePetIndex];
     if (!activePet) return null;
 
     const now = new Date();
@@ -921,7 +927,9 @@ export class GameService {
     const gameState = this.loadGameState();
     if (!gameState) return;
 
-    const activePet = this.getActivePet();
+    const activePetIndex = gameState.pets.findIndex(pet => pet.id === gameState.activePetId);
+    if (activePetIndex === -1) return { success: false, message: "宠物未找到" };
+    const activePet = gameState.pets[activePetIndex];
     if (!activePet) return;
 
     // 重置日常任务
