@@ -98,7 +98,10 @@ export default function Home() {
   }
 
   const handleGameStateUpdate = () => {
-    setGameState(GameService.loadGameState())
+    console.log('Page: handleGameStateUpdate被调用');
+    const newState = GameService.loadGameState();
+    console.log('Page: 加载的新状态', newState);
+    setGameState(newState)
   }
 
   const handleDeleteGame = () => {

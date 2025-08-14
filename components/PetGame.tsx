@@ -27,7 +27,9 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
 
   const handleTaskComplete = (taskId: string, completionData?: any) => {
     // TaskList组件已经调用了GameService.completeTask，这里只需要更新UI
+    console.log('PetGame: handleTaskComplete被调用', taskId);
     onGameStateUpdate()
+    console.log('PetGame: onGameStateUpdate已调用');
   }
 
   const handleResetDailyTasks = () => {

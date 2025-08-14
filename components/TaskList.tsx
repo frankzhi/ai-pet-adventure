@@ -100,10 +100,13 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
 
   const handleTaskComplete = (taskId: string, completionData?: any) => {
     try {
+      console.log('TaskList: 开始完成任务', taskId, completionData);
       const result = GameService.completeTask(taskId, completionData);
+      console.log('TaskList: 任务完成结果', result);
       
       if (result.success) {
         // 立即更新游戏状态
+        console.log('TaskList: 调用onTaskComplete回调');
         onTaskComplete(taskId, completionData);
         setActiveTaskId(null);
         setConversationInput('');
