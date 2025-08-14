@@ -21,8 +21,12 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
   const [activePet, setActivePet] = useState<Pet | null>(null)
 
   useEffect(() => {
-    setCurrentStory(GameService.getCurrentStory())
-    setActivePet(GameService.getActivePet())
+    console.log('PetGame: gameState变化，重新获取数据', gameState);
+    const newCurrentStory = GameService.getCurrentStory()
+    const newActivePet = GameService.getActivePet()
+    console.log('PetGame: 获取到的新数据', { newCurrentStory, newActivePet });
+    setCurrentStory(newCurrentStory)
+    setActivePet(newActivePet)
   }, [gameState])
 
   const handleTaskComplete = (taskId: string, completionData?: any) => {

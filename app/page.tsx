@@ -101,7 +101,8 @@ export default function Home() {
     console.log('Page: handleGameStateUpdate被调用');
     const newState = GameService.loadGameState();
     console.log('Page: 加载的新状态', newState);
-    setGameState(newState)
+    // 强制触发React重新渲染
+    setGameState({ ...newState })
   }
 
   const handleDeleteGame = () => {
