@@ -25,14 +25,9 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
     setActivePet(GameService.getActivePet())
   }, [gameState])
 
-  const handleTaskComplete = (taskId: string) => {
-    try {
-      GameService.completeTask(taskId)
-      onGameStateUpdate()
-    } catch (error) {
-      console.error('完成任务失败:', error)
-      alert('任务完成条件未满足，请重试')
-    }
+  const handleTaskComplete = (taskId: string, completionData?: any) => {
+    // TaskList组件已经调用了GameService.completeTask，这里只需要更新UI
+    onGameStateUpdate()
   }
 
   const handleResetDailyTasks = () => {
