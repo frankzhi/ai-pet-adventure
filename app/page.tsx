@@ -20,7 +20,16 @@ export default function Home() {
     if (savedState) {
       // 更新宠物状态
       GameService.updatePetStatus()
-      setGameState(GameService.loadGameState())
+      const updatedState = GameService.loadGameState()
+      
+      // 检查是否有活着的宠物
+      if (updatedState && !GameService.hasAlivePet()) {
+        // 所有宠物都死了，显示游戏结束界面
+        setGameState(null)
+        alert('💔 所有宠物都离开了... 请重新开始游戏。')
+      } else {
+        setGameState(updatedState)
+      }
     }
     setLoading(false)
   }, [])
@@ -32,7 +41,16 @@ export default function Home() {
     const updateStatus = async () => {
       try {
         await GameService.updatePetStatus();
-        setGameState(GameService.loadGameState());
+        const updatedState = GameService.loadGameState();
+        
+        // 检查是否有活着的宠物
+        if (updatedState && !GameService.hasAlivePet()) {
+          // 所有宠物都死了，显示游戏结束界面
+          setGameState(null)
+          alert('💔 所有宠物都离开了... 请重新开始游戏。')
+        } else {
+          setGameState(updatedState);
+        }
       } catch (error) {
         console.error('更新宠物状态失败:', error);
       }

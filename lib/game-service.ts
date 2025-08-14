@@ -157,6 +157,31 @@ export class GameService {
     return gameState.pets.find(pet => pet.id === gameState.activePetId) || null;
   }
 
+  // 检查是否有活着的宠物
+  static hasAlivePet(): boolean {
+    const gameState = this.loadGameState();
+    if (!gameState) return false;
+
+    return gameState.pets.some(pet => pet.isAlive);
+  }
+
+  // 获取第一个活着的宠物
+  static getFirstAlivePet(): Pet | null {
+    const gameState = this.loadGameState();
+    if (!gameState) return null;
+
+    const alivePet = gameState.pets.find(pet => pet.isAlive);
+    if (alivePet) {
+      // 如果当前活跃宠物不是活着的，切换到第一个活着的宠物
+      if (gameState.activePetId !== alivePet.id) {
+        gameState.activePetId = alivePet.id;
+        this.saveGameState(gameState);
+      }
+      return alivePet;
+    }
+    return null;
+  }
+
   static switchActivePet(petId: string): void {
     const gameState = this.loadGameState();
     if (!gameState) return;
@@ -263,6 +288,14 @@ export class GameService {
       throw new Error('没有找到活跃的宠物');
     }
 
+    // 检查宠物是否还活着
+    if (!activePet.isAlive) {
+      return {
+        content: `💔 ${activePet.name}已经离开了，无法回应你的消息。请重新开始游戏。`,
+        action: '静静地躺着，没有任何回应'
+      };
+    }
+
     // 添加用户消息到对话历史
     const userMessage: Conversation = {
       id: Date.now().toString(),
@@ -332,6 +365,11 @@ export class GameService {
     const activePet = this.getActivePet();
     if (!activePet) return { success: false, message: '宠物未找到' };
 
+    // 检查宠物是否还活着
+    if (!activePet.isAlive) {
+      return { success: false, message: '宠物已经离开了，无法完成任务' };
+    }
+
     // 根据任务类型进行不同的完成逻辑
     let canComplete = false;
     let failureReason = '';
@@ -399,6 +437,13 @@ export class GameService {
     task.isCompleted = true;
     task.completedAt = new Date();
 
+    // 记录任务完成前的状态
+    const oldHealth = activePet.health;
+    const oldHappiness = activePet.happiness;
+    const oldEnergy = activePet.energy;
+    const oldHunger = activePet.hunger;
+    const oldExperience = activePet.experience;
+
     // 应用奖励
     activePet.experience += task.reward.experience;
     activePet.happiness = Math.min(100, activePet.happiness + task.reward.happiness);
@@ -412,11 +457,38 @@ export class GameService {
       activePet.hunger = Math.min(100, Math.max(0, activePet.hunger + task.reward.hunger));
     }
 
+    // 记录状态变化到活动日志
+    const statusChanges = [];
+    if (activePet.health !== oldHealth) statusChanges.push(`健康 ${oldHealth}→${activePet.health}`);
+    if (activePet.happiness !== oldHappiness) statusChanges.push(`快乐 ${oldHappiness}→${activePet.happiness}`);
+    if (activePet.energy !== oldEnergy) statusChanges.push(`能量 ${oldEnergy}→${activePet.energy}`);
+    if (activePet.hunger !== oldHunger) statusChanges.push(`饱食度 ${oldHunger}→${activePet.hunger}`);
+    if (activePet.experience !== oldExperience) statusChanges.push(`经验 ${oldExperience}→${activePet.experience}`);
+
+    if (statusChanges.length > 0) {
+      gameState.activityLogs.push({
+        id: Date.now().toString(),
+        activity: `完成任务"${task.title}"`,
+        timestamp: new Date(),
+        type: 'status_change',
+        details: `状态变化: ${statusChanges.join(', ')}`
+      });
+    }
+
     // 检查升级
     const newLevel = Math.floor(activePet.experience / 100) + 1;
     if (newLevel > activePet.level) {
       activePet.level = newLevel;
       gameState.currentStory += `\n🎉 恭喜！${activePet.name}升级到了${newLevel}级！`;
+      
+      // 记录升级事件
+      gameState.activityLogs.push({
+        id: Date.now().toString(),
+        activity: `${activePet.name}升级到了${newLevel}级！`,
+        timestamp: new Date(),
+        type: 'event',
+        details: '升级'
+      });
     }
 
     // 如果是计时器任务，移除计时器
@@ -424,6 +496,7 @@ export class GameService {
       this.completeTimer(taskId);
     }
 
+    // 立即保存状态
     this.saveGameState(gameState);
     
     return { 
@@ -665,22 +738,29 @@ export class GameService {
     if (!gameState) return;
 
     const now = new Date();
+    const lastUpdate = gameState.lastStatusUpdate ? new Date(gameState.lastStatusUpdate) : now;
+    const hoursSinceLastUpdate = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
+    
+    // 如果距离上次更新不到1小时，不进行状态更新
+    if (hoursSinceLastUpdate < 1) {
+      return;
+    }
     
     // 更新所有宠物的状态
     for (const pet of gameState.pets) {
-      const lastInteraction = new Date(pet.lastInteraction);
-      const hoursSinceLastInteraction = (now.getTime() - lastInteraction.getTime()) / (1000 * 60 * 60);
+      // 如果宠物已经死亡，跳过更新
+      if (!pet.isAlive) {
+        continue;
+      }
 
-      // 根据时间流逝更新状态（降低更新频率）
-      if (hoursSinceLastInteraction > 1) {
-        pet.hunger = Math.max(0, pet.hunger - hoursSinceLastInteraction * 3); // 饱食度减少
-        pet.energy = Math.max(0, pet.energy - hoursSinceLastInteraction * 2);
-        pet.happiness = Math.max(0, pet.happiness - hoursSinceLastInteraction * 1);
-        
-        // 健康值衰减机制：当快乐/能量/饱食度低于10%时，健康值逐渐降低
-        if (pet.happiness < 10 || pet.energy < 10 || pet.hunger < 10) {
-          pet.health = Math.max(0, pet.health - hoursSinceLastInteraction * 2);
-        }
+      // 根据时间流逝更新状态
+      pet.hunger = Math.max(0, pet.hunger - hoursSinceLastUpdate * 3); // 饱食度减少
+      pet.energy = Math.max(0, pet.energy - hoursSinceLastUpdate * 2);
+      pet.happiness = Math.max(0, pet.happiness - hoursSinceLastUpdate * 1);
+      
+      // 健康值衰减机制：当快乐/能量/饱食度低于10%时，健康值逐渐降低
+      if (pet.happiness < 10 || pet.energy < 10 || pet.hunger < 10) {
+        pet.health = Math.max(0, pet.health - hoursSinceLastUpdate * 2);
       }
 
       // 更新心情
@@ -695,6 +775,17 @@ export class GameService {
       if (pet.health <= 0) {
         pet.isAlive = false;
         gameState.currentStory += `\n💔 ${pet.name}因为健康值过低而离开了...`;
+        
+        // 记录死亡事件
+        gameState.activityLogs.push({
+          id: Date.now().toString(),
+          activity: `${pet.name}因为健康值过低而离开了...`,
+          timestamp: new Date(),
+          type: 'event',
+          details: '宠物死亡'
+        });
+        
+        continue; // 跳过死亡宠物的后续更新
       }
 
       // 生成随机事件（每10分钟一次）

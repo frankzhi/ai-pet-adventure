@@ -73,6 +73,33 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
     )
   }
 
+  // 检查宠物是否死亡
+  if (!activePet.isAlive) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="text-6xl mb-4">💔</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            {activePet.name} 离开了...
+          </h2>
+          <p className="text-gray-600 mb-6">
+            因为健康值过低，{activePet.name}已经离开了这个世界。
+          </p>
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="font-medium text-gray-800 mb-2">最后的回忆</h3>
+            <p className="text-gray-700 text-sm">{gameState.currentStory}</p>
+          </div>
+          <button
+            onClick={onDeleteGame}
+            className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            重新开始游戏
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-6xl mx-auto">
       {/* 顶部信息栏 */}
