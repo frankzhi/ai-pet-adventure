@@ -608,6 +608,228 @@ ${conversationHistory}
     return hasUpdate ? statusUpdate : undefined;
   }
 
+  // 新增：分析对话中的状态恢复指令
+  static analyzeDialogueActions(userMessage: string, pet: Pet): {
+    actions: Array<{
+      type: 'feed' | 'play' | 'rest' | 'exercise' | 'care' | 'comfort';
+      intensity: 'small' | 'medium' | 'large';
+      description: string;
+      statusEffects: Partial<Pet>;
+    }>;
+    shouldCreateTask: boolean;
+  } {
+    const actions: Array<{
+      type: 'feed' | 'play' | 'rest' | 'exercise' | 'care' | 'comfort';
+      intensity: 'small' | 'medium' | 'large';
+      description: string;
+      statusEffects: Partial<Pet>;
+    }> = [];
+    
+    const message = userMessage.toLowerCase();
+    
+    // 喂食相关
+    if (message.includes('去吃') || message.includes('吃点') || message.includes('喂你') || 
+        message.includes('吃东西') || message.includes('吃饭') || message.includes('进食') ||
+        message.includes('充电') || message.includes('浇水') || message.includes('补充能量')) {
+      
+      let intensity: 'small' | 'medium' | 'large' = 'medium';
+      let hungerBoost = 20;
+      let happinessBoost = 10;
+      
+      if (message.includes('大餐') || message.includes('好好吃') || message.includes('饱餐')) {
+        intensity = 'large';
+        hungerBoost = 35;
+        happinessBoost = 15;
+      } else if (message.includes('点心') || message.includes('小食') || message.includes('零食')) {
+        intensity = 'small';
+        hungerBoost = 10;
+        happinessBoost = 5;
+      }
+      
+      let description = '';
+      if (pet.petType === 'robot') {
+        description = intensity === 'large' ? '进行了完整充电' : intensity === 'small' ? '补充了一些电量' : '进行了充电';
+      } else if (pet.petType === 'plant') {
+        description = intensity === 'large' ? '进行了充分浇水和施肥' : intensity === 'small' ? '补充了一些水分' : '进行了浇水';
+      } else {
+        description = intensity === 'large' ? '享用了丰盛的大餐' : intensity === 'small' ? '吃了一些小点心' : '吃了一顿美食';
+      }
+      
+      actions.push({
+        type: 'feed',
+        intensity,
+        description,
+        statusEffects: {
+          hunger: Math.min(100, pet.hunger + hungerBoost),
+          happiness: Math.min(100, pet.happiness + happinessBoost),
+          health: Math.min(100, pet.health + 5)
+        }
+      });
+    }
+    
+    // 玩耍/互动相关
+    if (message.includes('一起玩') || message.includes('陪你玩') || message.includes('游戏') || 
+        message.includes('玩耍') || message.includes('互动') || message.includes('陪伴')) {
+      
+      let intensity: 'small' | 'medium' | 'large' = 'medium';
+      let happinessBoost = 15;
+      let energyCost = 5;
+      
+      if (message.includes('好好玩') || message.includes('痛快') || message.includes('尽情')) {
+        intensity = 'large';
+        happinessBoost = 25;
+        energyCost = 10;
+      } else if (message.includes('轻松') || message.includes('简单') || message.includes('一会儿')) {
+        intensity = 'small';
+        happinessBoost = 8;
+        energyCost = 2;
+      }
+      
+      actions.push({
+        type: 'play',
+        intensity,
+        description: intensity === 'large' ? '进行了愉快的长时间游戏' : intensity === 'small' ? '进行了轻松的小游戏' : '一起玩了一会儿',
+        statusEffects: {
+          happiness: Math.min(100, pet.happiness + happinessBoost),
+          energy: Math.max(0, pet.energy - energyCost),
+          experience: pet.experience + (intensity === 'large' ? 15 : intensity === 'small' ? 5 : 10)
+        }
+      });
+    }
+    
+    // 休息相关
+    if (message.includes('休息') || message.includes('睡觉') || message.includes('放松') || 
+        message.includes('歇一会') || message.includes('打盹') || message.includes('躺下')) {
+      
+      let intensity: 'small' | 'medium' | 'large' = 'medium';
+      let energyBoost = 20;
+      let healthBoost = 10;
+      
+      if (message.includes('好好休息') || message.includes('深度') || message.includes('充分')) {
+        intensity = 'large';
+        energyBoost = 35;
+        healthBoost = 15;
+      } else if (message.includes('小憩') || message.includes('短暂') || message.includes('一会儿')) {
+        intensity = 'small';
+        energyBoost = 10;
+        healthBoost = 5;
+      }
+      
+      actions.push({
+        type: 'rest',
+        intensity,
+        description: intensity === 'large' ? '进行了深度休息' : intensity === 'small' ? '小憩了一会儿' : '好好休息了一下',
+        statusEffects: {
+          energy: Math.min(100, pet.energy + energyBoost),
+          health: Math.min(100, pet.health + healthBoost),
+          mood: 'neutral' as any
+        }
+      });
+    }
+    
+    // 运动相关
+    if (message.includes('运动') || message.includes('锻炼') || message.includes('活动') || 
+        message.includes('散步') || message.includes('跑步') || message.includes('训练')) {
+      
+      let intensity: 'small' | 'medium' | 'large' = 'medium';
+      let healthBoost = 15;
+      let energyCost = 15;
+      let expBoost = 12;
+      
+      if (message.includes('激烈') || message.includes('大量') || message.includes('强化')) {
+        intensity = 'large';
+        healthBoost = 25;
+        energyCost = 25;
+        expBoost = 20;
+      } else if (message.includes('轻松') || message.includes('简单') || message.includes('散步')) {
+        intensity = 'small';
+        healthBoost = 8;
+        energyCost = 8;
+        expBoost = 6;
+      }
+      
+      actions.push({
+        type: 'exercise',
+        intensity,
+        description: intensity === 'large' ? '进行了激烈的运动训练' : intensity === 'small' ? '进行了轻松的活动' : '进行了适量运动',
+        statusEffects: {
+          health: Math.min(100, pet.health + healthBoost),
+          energy: Math.max(0, pet.energy - energyCost),
+          experience: pet.experience + expBoost,
+          happiness: Math.min(100, pet.happiness + 8)
+        }
+      });
+    }
+    
+    // 照顾/护理相关
+    if (message.includes('照顾') || message.includes('护理') || message.includes('治疗') || 
+        message.includes('检查') || message.includes('清洁') || message.includes('梳理')) {
+      
+      let intensity: 'small' | 'medium' | 'large' = 'medium';
+      let healthBoost = 20;
+      let happinessBoost = 12;
+      
+      if (message.includes('仔细') || message.includes('全面') || message.includes('彻底')) {
+        intensity = 'large';
+        healthBoost = 30;
+        happinessBoost = 18;
+      } else if (message.includes('简单') || message.includes('快速') || message.includes('检查')) {
+        intensity = 'small';
+        healthBoost = 12;
+        happinessBoost = 6;
+      }
+      
+      actions.push({
+        type: 'care',
+        intensity,
+        description: intensity === 'large' ? '接受了全面的照顾和护理' : intensity === 'small' ? '接受了简单的照顾' : '接受了悉心照顾',
+        statusEffects: {
+          health: Math.min(100, pet.health + healthBoost),
+          happiness: Math.min(100, pet.happiness + happinessBoost),
+          mood: 'happy' as any
+        }
+      });
+    }
+    
+    // 安慰相关
+    if (message.includes('安慰') || message.includes('鼓励') || message.includes('陪伴') || 
+        message.includes('关心') || message.includes('温暖') || message.includes('拥抱')) {
+      
+      let intensity: 'small' | 'medium' | 'large' = 'medium';
+      let happinessBoost = 18;
+      let healthBoost = 8;
+      
+      if (message.includes('温柔') || message.includes('耐心') || message.includes('深深')) {
+        intensity = 'large';
+        happinessBoost = 28;
+        healthBoost = 12;
+      } else if (message.includes('轻轻') || message.includes('简单') || message.includes('稍微')) {
+        intensity = 'small';
+        happinessBoost = 10;
+        healthBoost = 4;
+      }
+      
+      actions.push({
+        type: 'comfort',
+        intensity,
+        description: intensity === 'large' ? '得到了深深的安慰和关爱' : intensity === 'small' ? '得到了轻柔的安慰' : '得到了温暖的安慰',
+        statusEffects: {
+          happiness: Math.min(100, pet.happiness + happinessBoost),
+          health: Math.min(100, pet.health + healthBoost),
+          mood: 'happy' as any
+        }
+      });
+    }
+    
+    // 判断是否应该创建任务（当用户明确表达要执行某个动作时）
+    const shouldCreateTask = actions.length > 0 && (
+      message.includes('让你') || message.includes('去') || message.includes('现在') ||
+      message.includes('开始') || message.includes('来') || message.includes('应该')
+    );
+    
+    return { actions, shouldCreateTask };
+  }
+
   static async generateSpecialTask(
     pet: Pet,
     trigger: string

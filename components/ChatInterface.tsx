@@ -90,6 +90,42 @@ export default function ChatInterface({ pet, conversations, onGameStateUpdate }:
     return role === 'user' ? 'justify-end' : 'justify-start'
   }
 
+  // 根据宠物状态生成互动建议
+  const getSuggestions = () => {
+    const suggestions: string[] = []
+    
+    // 根据宠物状态给出建议
+    if (pet.hunger < 30) {
+      if (pet.petType === 'robot') {
+        suggestions.push('去充电吧', '补充一些电量')
+      } else if (pet.petType === 'plant') {
+        suggestions.push('给你浇水', '需要一些阳光')
+      } else {
+        suggestions.push('去吃点东西', '我们去吃饭吧')
+      }
+    }
+    
+    if (pet.happiness < 40) {
+      suggestions.push('一起玩游戏', '陪你聊聊天', '给你一个拥抱')
+    }
+    
+    if (pet.energy < 30) {
+      suggestions.push('好好休息一下', '躺下睡一觉', '放松一会儿')
+    }
+    
+    if (pet.health < 50) {
+      suggestions.push('让我照顾你', '检查一下身体', '需要护理吗')
+    }
+    
+    // 通用互动建议
+    if (suggestions.length < 3) {
+      const generalSuggestions = ['一起玩耍', '聊聊天', '做些运动', '互相陪伴']
+      suggestions.push(...generalSuggestions.slice(0, 3 - suggestions.length))
+    }
+    
+    return suggestions.slice(0, 4) // 最多显示4个建议
+  }
+
   return (
     <div className="flex flex-col h-96">
       {/* 聊天头部 */}
@@ -154,6 +190,24 @@ export default function ChatInterface({ pet, conversations, onGameStateUpdate }:
         <div ref={messagesEndRef} />
       </div>
 
+      {/* 互动建议区域 */}
+      {getSuggestions().length > 0 && (
+        <div className="px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 border-t border-gray-200">
+          <p className="text-xs text-gray-600 mb-2">💡 互动建议（点击快速输入）：</p>
+          <div className="flex flex-wrap gap-2">
+            {getSuggestions().map((suggestion, index) => (
+              <button
+                key={index}
+                onClick={() => setMessage(suggestion)}
+                className="px-2 py-1 text-xs bg-white text-gray-700 border border-gray-200 rounded-full hover:bg-gray-50 hover:border-gray-300 transition-colors"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 输入区域 */}
       <div className="p-4 border-t border-gray-200">
         <form onSubmit={handleSendMessage} className="flex space-x-2">
@@ -161,7 +215,7 @@ export default function ChatInterface({ pet, conversations, onGameStateUpdate }:
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder={`与${pet.name}聊天...`}
+            placeholder={`与${pet.name}聊天... (试试"去吃东西"、"一起玩"、"好好休息")`}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled={isSending}
           />

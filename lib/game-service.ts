@@ -312,12 +312,83 @@ export class GameService {
     gameState.conversations.push(userMessage);
 
     try {
+      // 分析对话中的状态恢复指令
+      const dialogueAnalysis = AIService.analyzeDialogueActions(message, activePet);
+      let statusUpdateMessage = '';
+      let experienceGained = 0;
+      
+      // 如果识别到状态恢复动作，立即执行
+      if (dialogueAnalysis.actions.length > 0) {
+        for (const action of dialogueAnalysis.actions) {
+          // 应用状态效果
+          Object.assign(activePet, action.statusEffects);
+          
+          // 记录活动日志
+          gameState.activityLogs.push({
+            id: Date.now().toString() + '_dialogue_action',
+            activity: `通过对话互动：${action.description}`,
+            timestamp: new Date(),
+            type: 'action',
+            details: `类型：${action.type}，强度：${action.intensity}`
+          });
+          
+          // 累积经验值
+          if (action.statusEffects.experience) {
+            experienceGained += action.statusEffects.experience - activePet.experience;
+          }
+          
+          // 生成状态更新消息
+          const statusChanges = [];
+          if (action.statusEffects.hunger !== undefined && action.statusEffects.hunger !== activePet.hunger) {
+            statusChanges.push(`饱食度 ${activePet.hunger}→${action.statusEffects.hunger}`);
+          }
+          if (action.statusEffects.happiness !== undefined && action.statusEffects.happiness !== activePet.happiness) {
+            statusChanges.push(`快乐度 ${activePet.happiness}→${action.statusEffects.happiness}`);
+          }
+          if (action.statusEffects.health !== undefined && action.statusEffects.health !== activePet.health) {
+            statusChanges.push(`健康值 ${activePet.health}→${action.statusEffects.health}`);
+          }
+          if (action.statusEffects.energy !== undefined && action.statusEffects.energy !== activePet.energy) {
+            statusChanges.push(`能量值 ${activePet.energy}→${action.statusEffects.energy}`);
+          }
+          
+          if (statusChanges.length > 0) {
+            statusUpdateMessage += `\n✨ ${action.description}，状态变化：${statusChanges.join(', ')}`;
+          }
+        }
+        
+        // 检查升级
+        const newLevel = Math.floor(activePet.experience / 100) + 1;
+        if (newLevel > activePet.level) {
+          activePet.level = newLevel;
+          gameState.currentStory += `\n🎉 恭喜！${activePet.name}通过互动升级到了${newLevel}级！`;
+          statusUpdateMessage += `\n🎉 升级到了${newLevel}级！`;
+          
+          // 记录升级事件
+          gameState.activityLogs.push({
+            id: Date.now().toString() + '_level_up',
+            activity: `${activePet.name}通过对话互动升级到了${newLevel}级！`,
+            timestamp: new Date(),
+            type: 'event',
+            details: '对话互动升级'
+          });
+        }
+        
+        // 更新最后互动时间
+        activePet.lastInteraction = new Date();
+      }
+
       // 获取AI回应
       const aiResponse = await AIService.generateStoryResponse(
         message,
         activePet,
         gameState.conversations
       );
+
+      // 如果有状态更新，将其添加到AI回应中
+      if (statusUpdateMessage) {
+        aiResponse.content += statusUpdateMessage;
+      }
 
       // 添加AI回应到对话历史
       const assistantMessage: Conversation = {
@@ -336,8 +407,16 @@ export class GameService {
         activePet.lastInteraction = new Date();
       }
 
-      // 检查是否需要生成特殊任务
-      if (Math.random() < 0.05) { // 降低到5%概率生成特殊任务
+      // 如果分析建议创建任务，生成相应的互动任务
+      if (dialogueAnalysis.shouldCreateTask && dialogueAnalysis.actions.length > 0) {
+        try {
+          const action = dialogueAnalysis.actions[0]; // 使用第一个识别到的动作
+          const interactiveTask = await this.createInteractiveTask(activePet, action, message);
+          gameState.tasks.push(interactiveTask);
+        } catch (error) {
+          console.error('生成互动任务失败:', error);
+        }
+      } else if (Math.random() < 0.05) { // 降低到5%概率生成特殊任务
         try {
           const specialTask = await AIService.generateSpecialTask(
             activePet,
@@ -357,6 +436,52 @@ export class GameService {
       console.error('发送消息失败:', error);
       throw error;
     }
+  }
+
+  // 创建基于对话的互动任务
+  private static async createInteractiveTask(
+    pet: Pet, 
+    action: {
+      type: 'feed' | 'play' | 'rest' | 'exercise' | 'care' | 'comfort';
+      intensity: 'small' | 'medium' | 'large';
+      description: string;
+      statusEffects: Partial<Pet>;
+    }, 
+    originalMessage: string
+  ): Promise<Task> {
+    const taskTypeMap = {
+      feed: 'feeding',
+      play: 'interaction',
+      rest: 'care',
+      exercise: 'exercise',
+      care: 'care',
+      comfort: 'interaction'
+    };
+
+    const rewardMultiplier = action.intensity === 'large' ? 1.5 : action.intensity === 'small' ? 0.7 : 1;
+    
+    const baseReward = {
+      experience: Math.floor(15 * rewardMultiplier),
+      happiness: Math.floor(12 * rewardMultiplier),
+      health: Math.floor(8 * rewardMultiplier),
+      energy: action.type === 'rest' ? Math.floor(15 * rewardMultiplier) : Math.floor(-5 * rewardMultiplier),
+      hunger: action.type === 'feed' ? Math.floor(-20 * rewardMultiplier) : Math.floor(3 * rewardMultiplier)
+    };
+
+    const task: Task = {
+      id: Date.now().toString() + '_interactive',
+      title: `${action.description}`,
+      description: `基于对话"${originalMessage}"生成的互动任务：${action.description}`,
+      type: 'special',
+      category: taskTypeMap[action.type] as any,
+      completionMethod: 'checkbox',
+      reward: baseReward,
+      isCompleted: false,
+      createdAt: new Date(),
+      timerCompletionWindow: 10,
+    };
+
+    return task;
   }
 
   // 新的任务完成系统
