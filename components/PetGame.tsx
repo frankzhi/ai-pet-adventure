@@ -37,7 +37,6 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
     console.log('PetGame: handleTaskComplete被调用', taskId);
     onGameStateUpdate()
     console.log('PetGame: onGameStateUpdate已调用');
-    }, 100)
   }
 
   const handleResetDailyTasks = () => {
