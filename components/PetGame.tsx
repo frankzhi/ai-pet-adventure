@@ -29,8 +29,6 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
     console.log('PetGame: 获取到的新数据', { newCurrentStory, newActivePet });
     setCurrentStory(newCurrentStory)
     setActivePet(newActivePet)
-    setForceUpdate(prev => prev + 1)
-    setForceUpdate(prev => prev + 1)
   }, [gameState])
 
   const handleTaskComplete = (taskId: string, completionData?: any) => {
