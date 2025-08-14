@@ -519,6 +519,15 @@ export class GameService {
     }
 
     // 立即保存状态
+    // 验证状态是否正确保存
+    const savedPet = this.getActivePet();
+    console.log("保存后立即获取的宠物状态:", {
+      experience: savedPet?.experience,
+      happiness: savedPet?.happiness,
+      health: savedPet?.health,
+      energy: savedPet?.energy,
+      hunger: savedPet?.hunger
+    });
     console.log("GameService: 保存状态后的activePet", activePet);
     this.saveGameState(gameState);
     
