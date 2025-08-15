@@ -330,11 +330,21 @@ export class GameService {
               experience: activePet.experience
             };
             
-            // 应用状态效果，确保数值有效
+            // 应用状态效果，确保数值有效（AI返回的是变化量，需要累加）
             Object.keys(action.statusEffects).forEach(key => {
               const value = action.statusEffects[key as keyof Pet];
               if (typeof value === 'number' && !isNaN(value) && isFinite(value)) {
-                (activePet as any)[key] = value;
+                const currentValue = (activePet as any)[key] || 0;
+                let newValue = currentValue + value;
+                
+                // 确保数值在合理范围内
+                if (key === 'experience') {
+                  newValue = Math.max(0, Math.min(999999, newValue));
+                } else {
+                  newValue = Math.max(0, Math.min(100, newValue));
+                }
+                
+                (activePet as any)[key] = newValue;
               }
             });
           
@@ -355,17 +365,21 @@ export class GameService {
           // 生成状态更新消息
           const statusChanges = [];
           
-          if (action.statusEffects.mood !== undefined && action.statusEffects.mood !== oldValues.mood) {
-            statusChanges.push(`心情值 ${oldValues.mood}→${action.statusEffects.mood}`);
+          if (action.statusEffects.mood !== undefined) {
+            const newMood = Math.max(0, Math.min(100, oldValues.mood + action.statusEffects.mood));
+            statusChanges.push(`心情值 ${oldValues.mood}→${newMood}`);
           }
-          if (action.statusEffects.health !== undefined && action.statusEffects.health !== oldValues.health) {
-            statusChanges.push(`健康值 ${oldValues.health}→${action.statusEffects.health}`);
+          if (action.statusEffects.health !== undefined) {
+            const newHealth = Math.max(0, Math.min(100, oldValues.health + action.statusEffects.health));
+            statusChanges.push(`健康值 ${oldValues.health}→${newHealth}`);
           }
-          if (action.statusEffects.energy !== undefined && action.statusEffects.energy !== oldValues.energy) {
-            statusChanges.push(`能量值 ${oldValues.energy}→${action.statusEffects.energy}`);
+          if (action.statusEffects.energy !== undefined) {
+            const newEnergy = Math.max(0, Math.min(100, oldValues.energy + action.statusEffects.energy));
+            statusChanges.push(`能量值 ${oldValues.energy}→${newEnergy}`);
           }
-          if (action.statusEffects.mutation !== undefined && action.statusEffects.mutation !== oldValues.mutation) {
-            statusChanges.push(`突变值 ${oldValues.mutation}→${action.statusEffects.mutation}`);
+          if (action.statusEffects.mutation !== undefined) {
+            const newMutation = Math.max(0, Math.min(100, oldValues.mutation + action.statusEffects.mutation));
+            statusChanges.push(`突变值 ${oldValues.mutation}→${newMutation}`);
           }
           
           if (statusChanges.length > 0) {
