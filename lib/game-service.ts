@@ -313,12 +313,13 @@ export class GameService {
 
     try {
       // 分析对话中的状态恢复指令
-      const dialogueAnalysis = AIService.analyzeDialogueActions(message, activePet);
+      const dialogueAnalysis = await AIService.analyzeDialogueActions(message, activePet);
+      console.log('对话分析结果:', dialogueAnalysis);
       let statusUpdateMessage = '';
       let experienceGained = 0;
       
-              // 如果识别到状态恢复动作，立即执行
-        if (dialogueAnalysis.actions.length > 0) {
+      // 如果识别到状态恢复动作，立即执行
+      if (dialogueAnalysis.actions.length > 0) {
           for (const action of dialogueAnalysis.actions) {
             // 记录原始状态
             const oldValues = {
@@ -1027,8 +1028,8 @@ export class GameService {
         pet.health = Math.max(0, pet.health - hoursSinceLastUpdate * 2);
       }
       
-      // 突变值累积：健康、心情、能量越低，突变值增长越快（增加累积速度）
-      const mutationRate = (100 - pet.health) * 0.02 + (100 - pet.mood) * 0.01 + (100 - pet.energy) * 0.01;
+      // 突变值累积：健康、心情、能量越低，突变值增长越快（大幅增加累积速度）
+      const mutationRate = (100 - pet.health) * 2 + (100 - pet.mood) * 1 + (100 - pet.energy) * 1;
       pet.mutation = Math.min(100, pet.mutation + hoursSinceLastUpdate * mutationRate);
       
       // 检查是否触发突变

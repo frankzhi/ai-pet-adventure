@@ -734,8 +734,88 @@ ${conversationHistory}
     return 10;
   }
 
-  // 新增：分析对话中的状态恢复指令
-  static analyzeDialogueActions(userMessage: string, pet: Pet): {
+  // 新增：使用AI智能分析对话中的状态变化
+  static async analyzeDialogueActions(userMessage: string, pet: Pet): Promise<{
+    actions: Array<{
+      type: 'feed' | 'play' | 'rest' | 'exercise' | 'care' | 'comfort' | 'intense_play' | 'chase' | 'jump';
+      intensity: 'small' | 'medium' | 'large';
+      description: string;
+      statusEffects: Partial<Pet>;
+    }>;
+    shouldCreateTask: boolean;
+  }> {
+    const actions: Array<{
+      type: 'feed' | 'play' | 'rest' | 'exercise' | 'care' | 'comfort' | 'intense_play' | 'chase' | 'jump';
+      intensity: 'small' | 'medium' | 'large';
+      description: string;
+      statusEffects: Partial<Pet>;
+    }> = [];
+    
+    const message = userMessage.toLowerCase();
+    
+    // 使用AI智能分析对话内容
+    const prompt = `分析这段对话内容，判断对宠物状态的影响：
+
+宠物信息：
+- 名字: ${pet.name}
+- 类型: ${pet.type}
+- 性格: ${pet.personalityType}
+- 当前状态: 健康${pet.health}%, 心情${pet.mood}%, 能量${pet.energy}%, 突变值${pet.mutation}%
+
+用户对话: "${userMessage}"
+
+请分析这段对话中：
+1. 是否有情绪变化（开心、难过、紧张、放松等）
+2. 是否有体力活动（运动、工作、休息等）
+3. 是否有饮食相关（吃东西、喝饮料等）
+4. 是否有社交互动（聊天、陪伴等）
+
+根据分析结果，返回JSON格式的状态变化：
+{
+  "actions": [
+    {
+      "type": "feed|play|rest|exercise|care|comfort",
+      "intensity": "small|medium|large",
+      "description": "描述这次互动",
+      "statusEffects": {
+        "mood": 数值变化,
+        "energy": 数值变化,
+        "health": 数值变化,
+        "experience": 数值变化
+      }
+    }
+  ],
+  "shouldCreateTask": true/false
+}
+
+注意：
+- 数值变化范围：-30到+30
+- 经验值通常是正数
+- 根据对话内容和情绪判断变化幅度
+- 如果没有明显变化，返回空数组`;
+
+    try {
+      const messages = [
+        { role: 'system', content: '你是一个游戏状态分析专家，能准确分析对话对宠物状态的影响。' },
+        { role: 'user', content: prompt }
+      ];
+      
+      const response = await this.callDeepSeekAPI(messages);
+      const analysis = JSON.parse(response);
+      
+      return {
+        actions: analysis.actions || [],
+        shouldCreateTask: analysis.shouldCreateTask || false
+      };
+    } catch (error) {
+      console.error('AI对话分析失败:', error);
+      // 如果AI分析失败，使用原有的关键词匹配
+      return this.fallbackDialogueAnalysis(message, pet);
+    }
+  }
+
+  // 备用方案：关键词匹配分析
+  private static fallbackDialogueAnalysis(message: string, pet: Pet): {
     actions: Array<{
       type: 'feed' | 'play' | 'rest' | 'exercise' | 'care' | 'comfort' | 'intense_play' | 'chase' | 'jump';
       intensity: 'small' | 'medium' | 'large';
@@ -750,8 +830,6 @@ ${conversationHistory}
       description: string;
       statusEffects: Partial<Pet>;
     }> = [];
-    
-    const message = userMessage.toLowerCase();
     
     // 喂食相关
     if (message.includes('去吃') || message.includes('吃点') || message.includes('喂你') || 
