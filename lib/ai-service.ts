@@ -388,11 +388,14 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         type: 'daily',
         category: 'feeding',
         completionMethod: 'checkbox',
-        reward: { experience: 10, mood: 15, health: 10, energy: 20 },
-        isCompleted: false,
-        createdAt: new Date(),
-        timerCompletionWindow: 10,
-      });
+              reward: { experience: 10, mood: 15, health: 10, energy: 20 },
+      isCompleted: false,
+      isExpired: false,
+      isStarted: false,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1小时后过期
+      timerCompletionWindow: 10,
+    });
     } else if (pet.petType === 'plant') {
       tasks.push({
         id: Date.now().toString() + '1',
@@ -403,7 +406,10 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         completionMethod: 'checkbox',
         reward: { experience: 10, mood: 15, health: 10, energy: 15 },
         isCompleted: false,
+        isExpired: false,
+        isStarted: false,
         createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1小时后过期
         timerCompletionWindow: 10,
       });
     } else {
@@ -416,7 +422,10 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         completionMethod: 'checkbox',
         reward: { experience: 10, mood: 15, health: 10, energy: 25 },
         isCompleted: false,
+        isExpired: false,
+        isStarted: false,
         createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1小时后过期
         timerCompletionWindow: 10,
       });
     }
@@ -431,7 +440,10 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
       completionMethod: 'conversation',
       reward: { experience: 15, mood: 20, health: 5, energy: -5 },
       isCompleted: false,
+      isExpired: false,
+      isStarted: false,
       createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 45 * 60 * 1000), // 45分钟后过期
       conversationTask: {
         requiredKeywords: ['喜欢', '开心'],
         requiredResponse: '情感表达'
@@ -449,7 +461,10 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
       completionMethod: 'physical',
       reward: { experience: 20, mood: 10, health: 15, energy: -15 },
       isCompleted: false,
+      isExpired: false,
+      isStarted: false,
       createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30分钟后过期
       physicalTask: {
         action: '做10个蹲起',
         duration: 60,
@@ -459,6 +474,77 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
     });
 
     return tasks;
+  }
+
+  // 生成高风险高回报任务
+  static generateHighRiskTask(pet: Pet): Task {
+    const riskTasks = [
+      {
+        title: '基因实验',
+        description: '参与一项基因改造实验，可能带来意想不到的变化',
+        riskLevel: 'extreme' as const,
+        riskDescription: '大幅增加突变值，但全面提升其他状态',
+        reward: { experience: 50, mood: 30, health: 25, energy: 40, mutation: 15 },
+        category: 'other' as const,
+        expiresIn: 20 // 20分钟
+      },
+      {
+        title: '极限运动挑战',
+        description: '参加一项极限运动，挑战身体和心理极限',
+        riskLevel: 'high' as const,
+        riskDescription: '大量消耗能量，但极大提升心情和经验',
+        reward: { experience: 40, mood: 50, health: 10, energy: -30, mutation: 3 },
+        category: 'exercise' as const,
+        expiresIn: 25 // 25分钟
+      },
+      {
+        title: '神秘药剂试验',
+        description: '尝试一种神秘的能量药剂，效果未知',
+        riskLevel: 'high' as const,
+        riskDescription: '可能获得大量能量，也可能产生副作用',
+        reward: { experience: 30, mood: -10, health: -15, energy: 60, mutation: 8 },
+        category: 'other' as const,
+        expiresIn: 15 // 15分钟
+      },
+      {
+        title: '情感共鸣实验',
+        description: '参与一项深度情感连接实验',
+        riskLevel: 'medium' as const,
+        riskDescription: '可能获得巨大的情感满足，但会消耗大量精力',
+        reward: { experience: 35, mood: 60, health: 5, energy: -25, mutation: 2 },
+        category: 'interaction' as const,
+        expiresIn: 35 // 35分钟
+      },
+      {
+        title: '量子跃迁',
+        description: '尝试进行量子层面的意识跃迁',
+        riskLevel: 'extreme' as const,
+        riskDescription: '极大的风险和回报，可能彻底改变存在状态',
+        reward: { experience: 80, mood: 20, health: -20, energy: 30, mutation: 25 },
+        category: 'other' as const,
+        expiresIn: 10 // 10分钟
+      }
+    ];
+
+    const selectedTask = riskTasks[Math.floor(Math.random() * riskTasks.length)];
+    
+    return {
+      id: Date.now().toString() + '_high_risk',
+      title: selectedTask.title,
+      description: selectedTask.description,
+      type: 'high_risk',
+      category: selectedTask.category,
+      completionMethod: 'checkbox',
+      reward: selectedTask.reward,
+      isCompleted: false,
+      isExpired: false,
+      isStarted: false,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + selectedTask.expiresIn * 60 * 1000),
+      riskLevel: selectedTask.riskLevel,
+      riskDescription: selectedTask.riskDescription,
+      timerCompletionWindow: 5,
+    };
   }
 
   static async generateStoryResponse(
@@ -622,10 +708,23 @@ ${conversationHistory}
     return hasUpdate ? statusUpdate : undefined;
   }
 
+  // 辅助函数
+  private static getJumpDescription(intensity: 'small' | 'medium' | 'large'): string {
+    if (intensity === 'large') return '进行了大幅度跳跃运动';
+    if (intensity === 'small') return '轻松地跳了几下';
+    return '愉快地跳跃着';
+  }
+
+  private static getJumpExperience(intensity: 'small' | 'medium' | 'large'): number {
+    if (intensity === 'large') return 15;
+    if (intensity === 'small') return 5;
+    return 10;
+  }
+
   // 新增：分析对话中的状态恢复指令
   static analyzeDialogueActions(userMessage: string, pet: Pet): {
     actions: Array<{
-      type: 'feed' | 'play' | 'rest' | 'exercise' | 'care' | 'comfort';
+      type: 'feed' | 'play' | 'rest' | 'exercise' | 'care' | 'comfort' | 'intense_play' | 'chase' | 'jump';
       intensity: 'small' | 'medium' | 'large';
       description: string;
       statusEffects: Partial<Pet>;
@@ -633,7 +732,7 @@ ${conversationHistory}
     shouldCreateTask: boolean;
   } {
     const actions: Array<{
-      type: 'feed' | 'play' | 'rest' | 'exercise' | 'care' | 'comfort';
+      type: 'feed' | 'play' | 'rest' | 'exercise' | 'care' | 'comfort' | 'intense_play' | 'chase' | 'jump';
       intensity: 'small' | 'medium' | 'large';
       description: string;
       statusEffects: Partial<Pet>;
@@ -838,10 +937,63 @@ ${conversationHistory}
       });
     }
     
+    // 激烈运动/追逐相关（基于用户提供的例子）
+    if (message.includes('激光') || message.includes('追逐') || message.includes('快速') || 
+        message.includes('疯狂') || message.includes('横跳') || message.includes('急转弯') ||
+        message.includes('狩猎') || message.includes('抓住') || message.includes('刺激') ||
+        message.includes('晃动') || message.includes('追') || message.includes('跳') ||
+        message.includes('奔跑') || message.includes('冲刺')) {
+      
+      let intensity: 'small' | 'medium' | 'large' = 'medium';
+      if (message.includes('疯狂') || message.includes('快速') || message.includes('刺激') || 
+          message.includes('急') || message.includes('冲刺')) {
+        intensity = 'large';
+      } else if (message.includes('轻轻') || message.includes('慢慢') || message.includes('小心')) {
+        intensity = 'small';
+      }
+      
+      const moodBoost = intensity === 'large' ? 25 : intensity === 'small' ? 8 : 15;
+      const energyCost = intensity === 'large' ? 20 : intensity === 'small' ? 5 : 12;
+      
+      actions.push({
+        type: 'intense_play',
+        intensity,
+        description: intensity === 'large' ? '进行了激烈的追逐游戏' : intensity === 'small' ? '进行了轻松的追逐' : '享受了追逐的乐趣',
+        statusEffects: {
+          mood: Math.min(100, pet.mood + moodBoost),
+          energy: Math.max(0, pet.energy - energyCost),
+          experience: pet.experience + (intensity === 'large' ? 20 : intensity === 'small' ? 8 : 12)
+        }
+      });
+    }
+    
+    // 跳跃相关
+    if (message.includes('跳') || message.includes('蹦') || message.includes('弹跳') || 
+        message.includes('跃') || message.includes('蹿')) {
+      
+      const intensityLevel = message.includes('疯狂') || message.includes('大力') || message.includes('高高') ? 'large' : 'medium';
+      const intensity: 'small' | 'medium' | 'large' = intensityLevel;
+      
+      const moodBoost = intensityLevel === 'large' ? 20 : 12;
+      const energyCost = intensityLevel === 'large' ? 15 : 8;
+      
+      actions.push({
+        type: 'jump',
+        intensity,
+        description: AIService.getJumpDescription(intensity),
+        statusEffects: {
+          mood: Math.min(100, pet.mood + moodBoost),
+          energy: Math.max(0, pet.energy - energyCost),
+          experience: pet.experience + AIService.getJumpExperience(intensity)
+        }
+      });
+    }
+    
     // 判断是否应该创建任务（当用户明确表达要执行某个动作时）
     const shouldCreateTask = actions.length > 0 && (
       message.includes('让你') || message.includes('去') || message.includes('现在') ||
-      message.includes('开始') || message.includes('来') || message.includes('应该')
+      message.includes('开始') || message.includes('来') || message.includes('应该') ||
+      message.includes('继续') || message.includes('再来') || message.includes('快速')
     );
     
     return { actions, shouldCreateTask };
@@ -901,7 +1053,10 @@ ${conversationHistory}
         completionMethod: taskData.completionMethod,
         reward: taskData.reward,
         isCompleted: false,
+        isExpired: false,
+        isStarted: false,
         createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 40 * 60 * 1000), // 40分钟后过期
         timerCompletionWindow: 10,
       };
     } catch (error) {

@@ -449,7 +449,7 @@ export class GameService {
   private static async createInteractiveTask(
     pet: Pet, 
     action: {
-      type: 'feed' | 'play' | 'rest' | 'exercise' | 'care' | 'comfort';
+      type: 'feed' | 'play' | 'rest' | 'exercise' | 'care' | 'comfort' | 'intense_play' | 'chase' | 'jump';
       intensity: 'small' | 'medium' | 'large';
       description: string;
       statusEffects: Partial<Pet>;
@@ -462,7 +462,10 @@ export class GameService {
       rest: 'care',
       exercise: 'exercise',
       care: 'care',
-      comfort: 'interaction'
+      comfort: 'interaction',
+      intense_play: 'exercise',
+      chase: 'exercise',
+      jump: 'exercise'
     };
 
     const rewardMultiplier = action.intensity === 'large' ? 1.5 : action.intensity === 'small' ? 0.7 : 1;
@@ -483,7 +486,10 @@ export class GameService {
       completionMethod: 'checkbox',
       reward: baseReward,
       isCompleted: false,
+      isExpired: false,
+      isStarted: false,
       createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 20 * 60 * 1000), // 20分钟后过期
       timerCompletionWindow: 10,
     };
 
@@ -905,6 +911,48 @@ export class GameService {
         title: '异常波动',
         description: `${pet.name}感受到了一些奇怪的变化...`,
         effect: { mutation: 5, mood: -3 }
+      },
+      {
+        type: 'positive' as const,
+        title: '能量涌现',
+        description: `${pet.name}突然感受到一股神秘的能量涌入体内！`,
+        effect: { energy: 20, mutation: 3, experience: 8 }
+      },
+      {
+        type: 'negative' as const,
+        title: '基因不稳定',
+        description: `${pet.name}的基因结构出现了轻微的不稳定现象。`,
+        effect: { health: -8, mutation: 8, mood: -5 }
+      },
+      {
+        type: 'neutral' as const,
+        title: '量子共振',
+        description: `${pet.name}与周围环境发生了微妙的量子共振。`,
+        effect: { mutation: 4, experience: 6 }
+      },
+      {
+        type: 'positive' as const,
+        title: '意识觉醒',
+        description: `${pet.name}的意识似乎达到了新的层次！`,
+        effect: { mood: 25, experience: 15, mutation: 6 }
+      },
+      {
+        type: 'negative' as const,
+        title: '能量紊乱',
+        description: `${pet.name}的内部能量系统出现了短暂的紊乱。`,
+        effect: { energy: -15, health: -5, mutation: 7 }
+      },
+      {
+        type: 'neutral' as const,
+        title: '进化压力',
+        description: `${pet.name}感受到了来自环境的进化压力。`,
+        effect: { mutation: 10, mood: -8, experience: 10 }
+      },
+      {
+        type: 'positive' as const,
+        title: '幸运时刻',
+        description: `${pet.name}度过了特别幸运的一天！`,
+        effect: { mood: 20, health: 10, energy: 15, experience: 12 }
       }
     ];
 
@@ -983,13 +1031,13 @@ export class GameService {
         continue; // 跳过死亡宠物的后续更新
       }
 
-      // 生成随机事件（每10分钟一次）
+      // 生成随机事件（每5分钟一次，频率提升）
       const lastEventTime = gameState.randomEvents.length > 0 
         ? new Date(gameState.randomEvents[gameState.randomEvents.length - 1].timestamp)
         : new Date(0);
       const minutesSinceLastEvent = (now.getTime() - lastEventTime.getTime()) / (1000 * 60);
       
-      if (minutesSinceLastEvent >= 10) {
+      if (minutesSinceLastEvent >= 5) {
         const randomEvent = this.generateRandomEvent(pet);
         if (randomEvent) {
           gameState.randomEvents.push(randomEvent);
@@ -1027,6 +1075,19 @@ export class GameService {
     }
 
     gameState.lastStatusUpdate = new Date();
+    
+    // 管理任务时效
+    this.manageTaskExpiration();
+    
+    // 定期生成新任务（每10分钟检查一次）
+    const lastTaskGeneration = gameState.lastTaskGeneration || new Date(0);
+    const minutesSinceLastTaskGen = (now.getTime() - lastTaskGeneration.getTime()) / (1000 * 60);
+    
+    if (minutesSinceLastTaskGen >= 10) {
+      await this.generatePeriodicTasks();
+      gameState.lastTaskGeneration = now;
+    }
+    
     this.saveGameState(gameState);
   }
 
@@ -1105,6 +1166,113 @@ export class GameService {
     }).catch(error => {
       console.error('重置日常任务失败:', error);
     });
+  }
+
+  // 任务时效管理系统
+  static manageTaskExpiration(): void {
+    const gameState = this.loadGameState();
+    if (!gameState) return;
+
+    const now = new Date();
+    let hasChanges = false;
+
+    // 检查过期任务
+    gameState.tasks.forEach(task => {
+      if (!task.isExpired && now > new Date(task.expiresAt)) {
+        task.isExpired = true;
+        hasChanges = true;
+        
+        // 记录过期事件
+        gameState.activityLogs.push({
+          id: Date.now().toString() + '_task_expired',
+          activity: `任务"${task.title}"已过期`,
+          timestamp: now,
+          type: 'event',
+          details: `任务类型：${task.type}，风险等级：${task.riskLevel || '无'}`
+        });
+      }
+    });
+
+    if (hasChanges) {
+      this.saveGameState(gameState);
+    }
+  }
+
+  // 开始任务
+  static startTask(taskId: string): { success: boolean; message: string } {
+    const gameState = this.loadGameState();
+    if (!gameState) return { success: false, message: '游戏状态未找到' };
+
+    const task = gameState.tasks.find(t => t.id === taskId);
+    if (!task) return { success: false, message: '任务不存在' };
+    
+    if (task.isExpired) return { success: false, message: '任务已过期，无法开始' };
+    if (task.isCompleted) return { success: false, message: '任务已完成' };
+    if (task.isStarted) return { success: false, message: '任务已经开始' };
+
+    // 开始任务
+    task.isStarted = true;
+    task.startedAt = new Date();
+    
+    // 记录开始事件
+    gameState.activityLogs.push({
+      id: Date.now().toString() + '_task_started',
+      activity: `开始任务"${task.title}"`,
+      timestamp: new Date(),
+      type: 'action',
+      details: `任务类型：${task.type}${task.riskLevel ? `，风险等级：${task.riskLevel}` : ''}`
+    });
+
+    this.saveGameState(gameState);
+    return { success: true, message: '任务已开始！' };
+  }
+
+  // 定期生成新任务（每10分钟调用一次）
+  static async generatePeriodicTasks(): Promise<void> {
+    const gameState = this.loadGameState();
+    if (!gameState) return;
+
+    const activePetIndex = gameState.pets.findIndex(pet => pet.id === gameState.activePetId);
+    if (activePetIndex === -1) return;
+    const activePet = gameState.pets[activePetIndex];
+    if (!activePet || !activePet.isAlive) return;
+
+    // 清理过期任务
+    const now = new Date();
+    gameState.tasks = gameState.tasks.filter(task => !task.isExpired || task.isCompleted);
+
+    // 计算当前活跃任务数量
+    const activeTasks = gameState.tasks.filter(task => !task.isCompleted && !task.isExpired);
+    
+    // 如果活跃任务少于5个，生成新任务
+    if (activeTasks.length < 5) {
+      const shouldGenerateHighRisk = Math.random() < 0.3; // 30%概率生成高风险任务
+      
+      if (shouldGenerateHighRisk) {
+        // 生成高风险任务
+        const highRiskTask = AIService.generateHighRiskTask(activePet);
+        gameState.tasks.push(highRiskTask);
+        
+        // 记录生成事件
+        gameState.activityLogs.push({
+          id: Date.now().toString() + '_high_risk_task_generated',
+          activity: `生成高风险任务"${highRiskTask.title}"`,
+          timestamp: now,
+          type: 'event',
+          details: `风险等级：${highRiskTask.riskLevel}，${highRiskTask.riskDescription}`
+        });
+      } else {
+        // 生成特殊任务
+        try {
+          const specialTask = await AIService.generateSpecialTask(activePet, '定期任务生成');
+          gameState.tasks.push(specialTask);
+        } catch (error) {
+          console.error('生成定期任务失败:', error);
+        }
+      }
+      
+      this.saveGameState(gameState);
+    }
   }
 
   // 突变系统

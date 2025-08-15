@@ -38,7 +38,7 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  type: 'daily' | 'story' | 'special' | 'physical' | 'conversation';
+  type: 'daily' | 'story' | 'special' | 'physical' | 'conversation' | 'high_risk';
   category: 'feeding' | 'exercise' | 'care' | 'interaction' | 'training' | 'other';
   reward: {
     experience: number;
@@ -50,6 +50,17 @@ export interface Task {
   isCompleted: boolean;
   createdAt: Date;
   completedAt?: Date;
+  
+  // 任务时效系统
+  expiresAt: Date; // 任务过期时间
+  isExpired: boolean; // 是否已过期
+  isStarted: boolean; // 是否已开始
+  startedAt?: Date; // 开始时间
+  
+  // 高风险任务标识
+  riskLevel?: 'low' | 'medium' | 'high' | 'extreme';
+  riskDescription?: string; // 风险说明
+  
   // 新增：任务完成方式
   completionMethod: 'checkbox' | 'physical' | 'conversation' | 'timer';
   // 新增：物理任务详情
@@ -131,6 +142,7 @@ export interface GameState {
   randomEvents: RandomEvent[];
   activityLogs: ActivityLog[];
   lastStatusUpdate: Date; // 上次状态更新时间
+  lastTaskGeneration?: Date; // 上次任务生成时间
 }
 
 export interface AIResponse {
