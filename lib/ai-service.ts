@@ -757,7 +757,8 @@ ${conversationHistory}
     if (message.includes('去吃') || message.includes('吃点') || message.includes('喂你') || 
         message.includes('吃东西') || message.includes('吃饭') || message.includes('进食') ||
         message.includes('充电') || message.includes('浇水') || message.includes('补充能量') ||
-        message.includes('撸串') || message.includes('烧烤') || message.includes('请客')) {
+        message.includes('撸串') || message.includes('烧烤') || message.includes('请客') ||
+        message.includes('星巴克') || message.includes('咖啡') || message.includes('澳白')) {
       
       let intensity: 'small' | 'medium' | 'large' = 'medium';
       let hungerBoost = 20;
@@ -768,6 +769,10 @@ ${conversationHistory}
         intensity = 'large';
         hungerBoost = 35;
         happinessBoost = 20;
+      } else if (message.includes('星巴克') || message.includes('咖啡') || message.includes('澳白')) {
+        intensity = 'medium';
+        hungerBoost = 25;
+        happinessBoost = 15;
       } else if (message.includes('点心') || message.includes('小食') || message.includes('零食')) {
         intensity = 'small';
         hungerBoost = 10;
@@ -890,6 +895,40 @@ ${conversationHistory}
           energy: Math.max(0, pet.energy - energyCost),
           experience: pet.experience + expBoost,
           mood: Math.min(100, pet.mood + 8)
+        }
+      });
+    }
+    
+    // 工作相关状态分析
+    if (message.includes('工作') || message.includes('客户') || message.includes('方案') ||
+        message.includes('开会') || message.includes('项目') || message.includes('提成')) {
+      
+      let moodChange = 0;
+      let energyChange = 0;
+      let description = '';
+      
+      if (message.includes('顺利') || message.includes('搞定') || message.includes('谈下来') || message.includes('大单子')) {
+        moodChange = 15;
+        energyChange = -5;
+        description = '工作顺利，心情愉悦';
+      } else if (message.includes('改需求') || message.includes('磨叽') || message.includes('临时')) {
+        moodChange = -10;
+        energyChange = -15;
+        description = '工作遇到困难，有些疲惫';
+      } else {
+        moodChange = 5;
+        energyChange = -8;
+        description = '工作中，消耗了一些精力';
+      }
+      
+      actions.push({
+        type: 'exercise',
+        intensity: 'medium',
+        description,
+        statusEffects: {
+          mood: Math.max(0, Math.min(100, pet.mood + moodChange)),
+          energy: Math.max(0, Math.min(100, pet.energy + energyChange)),
+          experience: pet.experience + 8
         }
       });
     }

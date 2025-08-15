@@ -320,6 +320,15 @@ export class GameService {
               // 如果识别到状态恢复动作，立即执行
         if (dialogueAnalysis.actions.length > 0) {
           for (const action of dialogueAnalysis.actions) {
+            // 记录原始状态
+            const oldValues = {
+              mood: activePet.mood,
+              health: activePet.health,
+              energy: activePet.energy,
+              mutation: activePet.mutation,
+              experience: activePet.experience
+            };
+            
             // 应用状态效果，确保数值有效
             Object.keys(action.statusEffects).forEach(key => {
               const value = action.statusEffects[key as keyof Pet];
@@ -344,12 +353,6 @@ export class GameService {
           
           // 生成状态更新消息
           const statusChanges = [];
-          const oldValues = {
-            mood: activePet.mood,
-            health: activePet.health,
-            energy: activePet.energy,
-            mutation: activePet.mutation
-          };
           
           if (action.statusEffects.mood !== undefined && action.statusEffects.mood !== oldValues.mood) {
             statusChanges.push(`心情值 ${oldValues.mood}→${action.statusEffects.mood}`);
@@ -1024,8 +1027,8 @@ export class GameService {
         pet.health = Math.max(0, pet.health - hoursSinceLastUpdate * 2);
       }
       
-      // 突变值累积：健康、心情、能量越低，突变值增长越快
-      const mutationRate = (100 - pet.health) * 0.01 + (100 - pet.mood) * 0.005 + (100 - pet.energy) * 0.005;
+      // 突变值累积：健康、心情、能量越低，突变值增长越快（增加累积速度）
+      const mutationRate = (100 - pet.health) * 0.02 + (100 - pet.mood) * 0.01 + (100 - pet.energy) * 0.01;
       pet.mutation = Math.min(100, pet.mutation + hoursSinceLastUpdate * mutationRate);
       
       // 检查是否触发突变
@@ -1269,8 +1272,8 @@ export class GameService {
     // 计算当前活跃任务数量
     const activeTasks = gameState.tasks.filter(task => !task.isCompleted && !task.isExpired);
     
-    // 如果活跃任务少于5个，生成新任务
-    if (activeTasks.length < 5) {
+    // 如果活跃任务少于3个，生成新任务（降低阈值，增加频率）
+    if (activeTasks.length < 3) {
       const shouldGenerateHighRisk = Math.random() < 0.3; // 30%概率生成高风险任务
       
       if (shouldGenerateHighRisk) {

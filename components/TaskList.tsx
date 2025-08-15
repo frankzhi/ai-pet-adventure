@@ -465,7 +465,14 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
             {completedTasks.map((task) => (
               <div
                 key={task.id}
-                className="bg-gray-50 border border-gray-200 rounded-lg p-4 opacity-75"
+                className="bg-gray-50 border border-gray-200 rounded-lg p-4 opacity-75 hover:opacity-100 transition-opacity cursor-pointer"
+                onClick={() => {
+                  // 展开显示任务详情
+                  const taskElement = document.getElementById(`task-${task.id}`);
+                  if (taskElement) {
+                    taskElement.classList.toggle('hidden');
+                  }
+                }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -480,6 +487,43 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTaskTypeColor(task.type)}`}>
                     {getTaskTypeLabel(task.type)}
                   </span>
+                </div>
+                
+                {/* 任务详情（默认隐藏） */}
+                <div id={`task-${task.id}`} className="hidden mt-3 pt-3 border-t border-gray-200">
+                  <p className="text-gray-600 text-sm mb-3">{task.description}</p>
+                  
+                  {/* 奖励信息 */}
+                  <div className="flex items-center space-x-4 text-sm">
+                    <div className="flex items-center space-x-1">
+                      <Star className="w-4 h-4 text-yellow-500" />
+                      <span className="text-gray-600">{task.reward.experience > 0 ? '+' : ''}{task.reward.experience} 经验</span>
+                    </div>
+                    {task.reward.mood !== undefined && (
+                      <div className="flex items-center space-x-1">
+                        <span className="text-pink-500">❤️</span>
+                        <span className="text-gray-600">{task.reward.mood > 0 ? '+' : ''}{task.reward.mood} 心情</span>
+                      </div>
+                    )}
+                    {task.reward.health !== undefined && (
+                      <div className="flex items-center space-x-1">
+                        <span className="text-red-500">💖</span>
+                        <span className="text-gray-600">{task.reward.health > 0 ? '+' : ''}{task.reward.health} 健康</span>
+                      </div>
+                    )}
+                    {task.reward.energy !== undefined && (
+                      <div className="flex items-center space-x-1">
+                        <span className="text-blue-500">⚡</span>
+                        <span className="text-gray-600">{task.reward.energy > 0 ? '+' : ''}{task.reward.energy} 能量</span>
+                      </div>
+                    )}
+                    {task.reward.mutation !== undefined && (
+                      <div className="flex items-center space-x-1">
+                        <span className="text-purple-500">🧬</span>
+                        <span className="text-gray-600">{task.reward.mutation > 0 ? '+' : ''}{task.reward.mutation} 突变值</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
