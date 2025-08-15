@@ -95,7 +95,7 @@ export default function ChatInterface({ pet, conversations, onGameStateUpdate }:
     const suggestions: string[] = []
     
     // 根据宠物状态给出建议
-    if (pet.hunger < 30) {
+    if (pet.energy < 30) {
       if (pet.petType === 'robot') {
         suggestions.push('去充电吧', '补充一些电量')
       } else if (pet.petType === 'plant') {
@@ -105,7 +105,7 @@ export default function ChatInterface({ pet, conversations, onGameStateUpdate }:
       }
     }
     
-    if (pet.happiness < 40) {
+    if (pet.mood < 40) {
       suggestions.push('一起玩游戏', '陪你聊聊天', '给你一个拥抱')
     }
     
@@ -115,6 +115,15 @@ export default function ChatInterface({ pet, conversations, onGameStateUpdate }:
     
     if (pet.health < 50) {
       suggestions.push('让我照顾你', '检查一下身体', '需要护理吗')
+    }
+    
+    if (pet.mutation > 60) {
+      suggestions.push('你还好吗', '感觉有什么变化吗', '让我看看你')
+    }
+    
+    // 根据突变标签给出特殊建议
+    if (pet.mutations && pet.mutations.length > 0) {
+      suggestions.push('展示一下你的新能力', '你的变化真有趣')
     }
     
     // 通用互动建议

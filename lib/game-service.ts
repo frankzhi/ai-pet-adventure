@@ -339,17 +339,24 @@ export class GameService {
           
           // 生成状态更新消息
           const statusChanges = [];
-          if (action.statusEffects.hunger !== undefined && action.statusEffects.hunger !== activePet.hunger) {
-            statusChanges.push(`饱食度 ${activePet.hunger}→${action.statusEffects.hunger}`);
+          const oldValues = {
+            mood: activePet.mood,
+            health: activePet.health,
+            energy: activePet.energy,
+            mutation: activePet.mutation
+          };
+          
+          if (action.statusEffects.mood !== undefined && action.statusEffects.mood !== oldValues.mood) {
+            statusChanges.push(`心情值 ${oldValues.mood}→${action.statusEffects.mood}`);
           }
-          if (action.statusEffects.happiness !== undefined && action.statusEffects.happiness !== activePet.happiness) {
-            statusChanges.push(`快乐度 ${activePet.happiness}→${action.statusEffects.happiness}`);
+          if (action.statusEffects.health !== undefined && action.statusEffects.health !== oldValues.health) {
+            statusChanges.push(`健康值 ${oldValues.health}→${action.statusEffects.health}`);
           }
-          if (action.statusEffects.health !== undefined && action.statusEffects.health !== activePet.health) {
-            statusChanges.push(`健康值 ${activePet.health}→${action.statusEffects.health}`);
+          if (action.statusEffects.energy !== undefined && action.statusEffects.energy !== oldValues.energy) {
+            statusChanges.push(`能量值 ${oldValues.energy}→${action.statusEffects.energy}`);
           }
-          if (action.statusEffects.energy !== undefined && action.statusEffects.energy !== activePet.energy) {
-            statusChanges.push(`能量值 ${activePet.energy}→${action.statusEffects.energy}`);
+          if (action.statusEffects.mutation !== undefined && action.statusEffects.mutation !== oldValues.mutation) {
+            statusChanges.push(`突变值 ${oldValues.mutation}→${action.statusEffects.mutation}`);
           }
           
           if (statusChanges.length > 0) {
@@ -462,10 +469,9 @@ export class GameService {
     
     const baseReward = {
       experience: Math.floor(15 * rewardMultiplier),
-      happiness: Math.floor(12 * rewardMultiplier),
+      mood: Math.floor(12 * rewardMultiplier),
       health: Math.floor(8 * rewardMultiplier),
-      energy: action.type === 'rest' ? Math.floor(15 * rewardMultiplier) : Math.floor(-5 * rewardMultiplier),
-      hunger: action.type === 'feed' ? Math.floor(-20 * rewardMultiplier) : Math.floor(3 * rewardMultiplier)
+      energy: action.type === 'rest' ? Math.floor(15 * rewardMultiplier) : Math.floor(-5 * rewardMultiplier)
     };
 
     const task: Task = {
@@ -571,49 +577,47 @@ export class GameService {
 
     // 记录任务完成前的状态
     const oldHealth = activePet.health;
-    const oldHappiness = activePet.happiness;
+    const oldMood = activePet.mood;
     const oldEnergy = activePet.energy;
-    const oldHunger = activePet.hunger;
+    const oldMutation = activePet.mutation;
     const oldExperience = activePet.experience;
 
     // 应用奖励
     console.log('任务完成前状态:', {
       experience: activePet.experience,
-      happiness: activePet.happiness,
+      mood: activePet.mood,
       health: activePet.health,
       energy: activePet.energy,
-      hunger: activePet.hunger
+      mutation: activePet.mutation
     });
     
     console.log("应用经验值奖励:", task.reward.experience);
     activePet.experience += task.reward.experience;
-    console.log("应用快乐度奖励:", task.reward.happiness);
-    activePet.happiness = Math.min(100, activePet.happiness + task.reward.happiness);
+    console.log("应用心情值奖励:", task.reward.mood);
+    activePet.mood = Math.min(100, activePet.mood + task.reward.mood);
     console.log("应用健康值奖励:", task.reward.health);
     activePet.health = Math.min(100, activePet.health + task.reward.health);
+    console.log("应用能量值奖励:", task.reward.energy);
+    activePet.energy = Math.min(100, Math.max(0, activePet.energy + task.reward.energy));
     
-    if (task.reward.energy !== undefined) {
-      activePet.energy = Math.min(100, activePet.energy + task.reward.energy);
-    }
-    if (task.reward.hunger !== undefined) {
-      // 饱食度：0=很饿，100=很饱，所以增加饱食度就是减少饥饿感
-      activePet.hunger = Math.min(100, Math.max(0, activePet.hunger + task.reward.hunger));
+    if (task.reward.mutation !== undefined) {
+      activePet.mutation = Math.min(100, Math.max(0, activePet.mutation + task.reward.mutation));
     }
     
     console.log('任务完成后状态:', {
       experience: activePet.experience,
-      happiness: activePet.happiness,
+      mood: activePet.mood,
       health: activePet.health,
       energy: activePet.energy,
-      hunger: activePet.hunger
+      mutation: activePet.mutation
     });
 
     // 记录状态变化到活动日志
     const statusChanges = [];
     if (activePet.health !== oldHealth) statusChanges.push(`健康 ${oldHealth}→${activePet.health}`);
-    if (activePet.happiness !== oldHappiness) statusChanges.push(`快乐 ${oldHappiness}→${activePet.happiness}`);
+    if (activePet.mood !== oldMood) statusChanges.push(`心情 ${oldMood}→${activePet.mood}`);
     if (activePet.energy !== oldEnergy) statusChanges.push(`能量 ${oldEnergy}→${activePet.energy}`);
-    if (activePet.hunger !== oldHunger) statusChanges.push(`饱食度 ${oldHunger}→${activePet.hunger}`);
+    if (activePet.mutation !== oldMutation) statusChanges.push(`突变值 ${oldMutation}→${activePet.mutation}`);
     if (activePet.experience !== oldExperience) statusChanges.push(`经验 ${oldExperience}→${activePet.experience}`);
 
     if (statusChanges.length > 0) {
@@ -651,10 +655,10 @@ export class GameService {
     // 验证状态是否正确保存 - 直接使用gameState.pets数组中的对象
     console.log("保存后立即获取的宠物状态:", {
       experience: gameState.pets[activePetIndex].experience,
-      happiness: gameState.pets[activePetIndex].happiness,
+      mood: gameState.pets[activePetIndex].mood,
       health: gameState.pets[activePetIndex].health,
       energy: gameState.pets[activePetIndex].energy,
-      hunger: gameState.pets[activePetIndex].hunger
+      mutation: gameState.pets[activePetIndex].mutation
     });
     console.log("GameService: 保存状态后的activePet", activePet);
     this.saveGameState(gameState);
@@ -674,6 +678,23 @@ export class GameService {
     if (activePetIndex === -1) return null;
     const activePet = gameState.pets[activePetIndex];
     if (!activePet) return null;
+
+    // 如果宠物正在休息，检查是否应该结束休息状态
+    if (activePet.isResting && activePet.restStartTime && activePet.restDuration) {
+      const now = new Date();
+      const restElapsed = (now.getTime() - activePet.restStartTime.getTime()) / (1000 * 60); // 分钟
+      if (restElapsed >= activePet.restDuration) {
+        // 结束休息状态
+        activePet.isResting = false;
+        activePet.restStartTime = undefined;
+        activePet.restDuration = undefined;
+        activePet.currentMoodState = 'neutral';
+        this.saveGameState(gameState);
+      } else {
+        // 仍在休息中，不主动互动
+        return null;
+      }
+    }
 
     const now = new Date();
     const lastInteraction = new Date(gameState.lastPetInteraction);
@@ -697,18 +718,18 @@ export class GameService {
     let shouldInitiate = false;
     let reason = '';
 
-    if (activePet.happiness < 20) {
+    if (activePet.mood < 20) {
       shouldInitiate = true;
-      reason = '感到孤独，想要陪伴';
-    } else if (activePet.hunger < 20) { // 饱食度低
+      reason = '感到沮丧，想要陪伴';
+    } else if (activePet.energy < 20) {
       shouldInitiate = true;
-      reason = '感到饥饿，需要食物';
-    } else if (activePet.energy < 10) {
-      shouldInitiate = true;
-      reason = '感到疲惫，需要休息';
+      reason = '感到疲惫，需要补充能量';
     } else if (activePet.health < 30) {
       shouldInitiate = true;
       reason = '感到不适，需要照顾';
+    } else if (activePet.mutation > 70) {
+      shouldInitiate = true;
+      reason = '感受到身体的变化，有些困惑';
     } else if (Math.random() < 0.1) { // 降低到10%概率随机主动互动
       shouldInitiate = true;
       reason = '想要和主人分享一些有趣的事情';
@@ -750,10 +771,10 @@ export class GameService {
         personalityMultiplier: 0.5, // 外向的宠物互动更频繁
         canInitiate: true,
         conditions: {
-          lowHappiness: true,
+          lowMood: true,
           lowHealth: true,
           lowEnergy: true,
-          highHunger: true,
+          highMutation: false,
         },
       },
       introverted: {
@@ -762,10 +783,10 @@ export class GameService {
         personalityMultiplier: 2, // 内向的宠物互动更少
         canInitiate: true,
         conditions: {
-          lowHappiness: true,
+          lowMood: true,
           lowHealth: true,
           lowEnergy: false,
-          highHunger: true,
+          highMutation: true,
         },
       },
       calm: {
@@ -774,10 +795,10 @@ export class GameService {
         personalityMultiplier: 1,
         canInitiate: true,
         conditions: {
-          lowHappiness: false,
+          lowMood: false,
           lowHealth: true,
           lowEnergy: false,
-          highHunger: true,
+          highMutation: true,
         },
       },
       energetic: {
@@ -786,10 +807,10 @@ export class GameService {
         personalityMultiplier: 0.7,
         canInitiate: true,
         conditions: {
-          lowHappiness: true,
+          lowMood: true,
           lowHealth: true,
           lowEnergy: true,
-          highHunger: true,
+          highMutation: false,
         },
       },
       mysterious: {
@@ -798,10 +819,10 @@ export class GameService {
         personalityMultiplier: 3,
         canInitiate: false, // 神秘的宠物不主动互动
         conditions: {
-          lowHappiness: false,
+          lowMood: false,
           lowHealth: false,
           lowEnergy: false,
-          highHunger: false,
+          highMutation: false,
         },
       },
       friendly: {
@@ -810,10 +831,10 @@ export class GameService {
         personalityMultiplier: 0.8,
         canInitiate: true,
         conditions: {
-          lowHappiness: true,
+          lowMood: true,
           lowHealth: true,
           lowEnergy: false,
-          highHunger: true,
+          highMutation: true,
         },
       },
       aloof: {
@@ -822,10 +843,10 @@ export class GameService {
         personalityMultiplier: 4,
         canInitiate: false, // 冷漠的宠物不主动互动
         conditions: {
-          lowHappiness: false,
+          lowMood: false,
           lowHealth: false,
           lowEnergy: false,
-          highHunger: false,
+          highMutation: false,
         },
       },
       playful: {
@@ -834,10 +855,10 @@ export class GameService {
         personalityMultiplier: 0.6,
         canInitiate: true,
         conditions: {
-          lowHappiness: true,
+          lowMood: true,
           lowHealth: true,
           lowEnergy: true,
-          highHunger: true,
+          highMutation: false,
         },
       },
     };
@@ -859,25 +880,31 @@ export class GameService {
         type: 'positive' as const,
         title: '发现宝藏',
         description: `${pet.name}在探索时发现了一个小宝藏！`,
-        effect: { happiness: 10, experience: 5 }
+        effect: { mood: 10, experience: 5 }
       },
       {
         type: 'positive' as const,
         title: '遇到朋友',
         description: `${pet.name}遇到了一个友好的小伙伴，一起玩耍很开心！`,
-        effect: { happiness: 15, energy: -5 }
+        effect: { mood: 15, energy: -5 }
       },
       {
         type: 'negative' as const,
         title: '遇到小麻烦',
         description: `${pet.name}遇到了一点小麻烦，但很快就解决了。`,
-        effect: { happiness: -5, experience: 3 }
+        effect: { mood: -5, experience: 3, mutation: 2 }
       },
       {
         type: 'neutral' as const,
         title: '天气变化',
         description: `天气发生了变化，${pet.name}适应得很好。`,
         effect: { energy: -3, health: 2 }
+      },
+      {
+        type: 'negative' as const,
+        title: '异常波动',
+        description: `${pet.name}感受到了一些奇怪的变化...`,
+        effect: { mutation: 5, mood: -3 }
       }
     ];
 
@@ -916,22 +943,28 @@ export class GameService {
       }
 
       // 根据时间流逝更新状态
-      pet.hunger = Math.max(0, pet.hunger - hoursSinceLastUpdate * 3); // 饱食度减少
-      pet.energy = Math.max(0, pet.energy - hoursSinceLastUpdate * 2);
-      pet.happiness = Math.max(0, pet.happiness - hoursSinceLastUpdate * 1);
+      pet.energy = Math.max(0, pet.energy - hoursSinceLastUpdate * 2); // 能量减少
+      pet.mood = Math.max(0, pet.mood - hoursSinceLastUpdate * 1); // 心情值减少
       
-      // 健康值衰减机制：当快乐/能量/饱食度低于10%时，健康值逐渐降低
-      if (pet.happiness < 10 || pet.energy < 10 || pet.hunger < 10) {
+      // 健康值衰减机制：当心情/能量低于10%时，健康值逐渐降低
+      if (pet.mood < 10 || pet.energy < 10) {
         pet.health = Math.max(0, pet.health - hoursSinceLastUpdate * 2);
       }
+      
+      // 突变值累积：健康、心情、能量越低，突变值增长越快
+      const mutationRate = (100 - pet.health) * 0.01 + (100 - pet.mood) * 0.005 + (100 - pet.energy) * 0.005;
+      pet.mutation = Math.min(100, pet.mutation + hoursSinceLastUpdate * mutationRate);
+      
+      // 检查是否触发突变
+      await this.checkForMutation(pet, gameState);
 
-      // 更新心情
-      if (pet.happiness < 30) pet.mood = 'sad';
-      else if (pet.happiness < 60) pet.mood = 'neutral';
-      else if (pet.energy < 30) pet.mood = 'tired';
-      else if (pet.hunger < 30) pet.mood = 'hungry';
-      else if (pet.happiness > 80) pet.mood = 'happy';
-      else pet.mood = 'neutral';
+      // 更新心情状态
+      if (pet.mood < 20) pet.currentMoodState = 'sad';
+      else if (pet.mood < 40) pet.currentMoodState = 'anxious';
+      else if (pet.mood < 60) pet.currentMoodState = 'neutral';
+      else if (pet.energy < 30) pet.currentMoodState = 'tired';
+      else if (pet.mood > 80) pet.currentMoodState = 'happy';
+      else pet.currentMoodState = 'neutral';
 
       // 检查宠物是否死亡（健康值为0时死亡）
       if (pet.health <= 0) {
@@ -962,10 +995,10 @@ export class GameService {
           gameState.randomEvents.push(randomEvent);
           
           // 应用事件效果
-          if (randomEvent.effect.happiness) pet.happiness = Math.min(100, Math.max(0, pet.happiness + randomEvent.effect.happiness));
+          if (randomEvent.effect.mood) pet.mood = Math.min(100, Math.max(0, pet.mood + randomEvent.effect.mood));
           if (randomEvent.effect.health) pet.health = Math.min(100, Math.max(0, pet.health + randomEvent.effect.health));
           if (randomEvent.effect.energy) pet.energy = Math.min(100, Math.max(0, pet.energy + randomEvent.effect.energy));
-          if (randomEvent.effect.hunger) pet.hunger = Math.min(100, Math.max(0, pet.hunger + randomEvent.effect.hunger));
+          if (randomEvent.effect.mutation) pet.mutation = Math.min(100, Math.max(0, pet.mutation + randomEvent.effect.mutation));
           if (randomEvent.effect.experience) pet.experience += randomEvent.effect.experience;
         }
       }
@@ -1072,5 +1105,192 @@ export class GameService {
     }).catch(error => {
       console.error('重置日常任务失败:', error);
     });
+  }
+
+  // 突变系统
+  private static async checkForMutation(pet: Pet, gameState: GameState): Promise<void> {
+    // 检查是否已经今天检查过突变
+    const now = new Date();
+    const lastCheck = new Date(pet.lastMutationCheck);
+    const hoursSinceLastCheck = (now.getTime() - lastCheck.getTime()) / (1000 * 60 * 60);
+    
+    // 每24小时最多一次突变检查
+    if (hoursSinceLastCheck < 24) return;
+    
+    // 计算突变概率：基于突变值，突变值越高概率越大
+    const baseProbability = pet.mutation / 100 * 0.3; // 最高30%概率
+    const randomChance = Math.random();
+    
+    if (randomChance < baseProbability) {
+      // 触发突变！
+      const mutation = this.generateMutation(pet);
+      if (mutation) {
+        // 应用突变
+        pet.mutations.push(mutation.name);
+        
+        // 应用突变效果
+        if (mutation.effects.moodMultiplier) {
+          pet.mood = Math.min(100, Math.max(0, pet.mood * mutation.effects.moodMultiplier));
+        }
+        if (mutation.effects.energyMultiplier) {
+          pet.energy = Math.min(100, Math.max(0, pet.energy * mutation.effects.energyMultiplier));
+        }
+        if (mutation.effects.healthMultiplier) {
+          pet.health = Math.min(100, Math.max(0, pet.health * mutation.effects.healthMultiplier));
+        }
+        
+        // 减少突变值（已经发生突变）
+        pet.mutation = Math.max(0, pet.mutation - 30);
+        
+        // 记录突变事件
+        gameState.activityLogs.push({
+          id: Date.now().toString() + '_mutation',
+          activity: `🧬 ${pet.name}发生了突变：${mutation.name}`,
+          timestamp: new Date(),
+          type: 'event',
+          details: `${mutation.description} - ${mutation.effects.specialAbility || ''}`
+        });
+        
+        // 更新故事
+        gameState.currentStory += `\n🧬 ${pet.name}发生了奇妙的变化！获得了新特性：${mutation.name}`;
+      }
+    }
+    
+    // 更新最后检查时间
+    pet.lastMutationCheck = now;
+  }
+
+  private static generateMutation(pet: Pet): any {
+    // 根据宠物类型和当前突变值生成合适的突变
+    const mutations = [
+      // 通用突变
+      {
+        id: 'enhanced_senses',
+        name: '感知增强',
+        description: '感官变得更加敏锐',
+        type: 'ability',
+        rarity: 'common',
+        effects: {
+          moodMultiplier: 1.1,
+          specialAbility: '能够感知到更微妙的情绪变化'
+        },
+        triggers: { minMutation: 20 }
+      },
+      {
+        id: 'energy_efficiency',
+        name: '能量节约',
+        description: '新陈代谢变得更加高效',
+        type: 'physical',
+        rarity: 'common',
+        effects: {
+          energyMultiplier: 1.15,
+          specialAbility: '能量消耗减少'
+        },
+        triggers: { minMutation: 30 }
+      },
+      // 动物类型突变
+      {
+        id: 'night_vision',
+        name: '夜视能力',
+        description: '在黑暗中也能清晰地看见',
+        type: 'ability',
+        rarity: 'rare',
+        effects: {
+          moodMultiplier: 1.05,
+          specialAbility: '夜间活动能力增强'
+        },
+        triggers: { minMutation: 40, petTypes: ['animal'] }
+      },
+      // 机器人类型突变
+      {
+        id: 'upgraded_processor',
+        name: '处理器升级',
+        description: '思维处理速度显著提升',
+        type: 'ability',
+        rarity: 'rare',
+        effects: {
+          moodMultiplier: 1.2,
+          specialAbility: '学习和反应速度大幅提升'
+        },
+        triggers: { minMutation: 50, petTypes: ['robot'] }
+      },
+      // 植物类型突变
+      {
+        id: 'photosynthesis_boost',
+        name: '光合作用强化',
+        description: '能够更高效地利用光能',
+        type: 'physical',
+        rarity: 'rare',
+        effects: {
+          energyMultiplier: 1.3,
+          specialAbility: '在阳光下快速恢复能量'
+        },
+        triggers: { minMutation: 45, petTypes: ['plant'] }
+      },
+      // 高级突变
+      {
+        id: 'regeneration',
+        name: '再生能力',
+        description: '获得了缓慢的自我修复能力',
+        type: 'ability',
+        rarity: 'epic',
+        effects: {
+          healthMultiplier: 1.25,
+          specialAbility: '健康值会缓慢自动恢复'
+        },
+        triggers: { minMutation: 70 }
+      },
+      {
+        id: 'emotional_resonance',
+        name: '情感共鸣',
+        description: '能够与主人建立更深层的情感连接',
+        type: 'behavioral',
+        rarity: 'legendary',
+        effects: {
+          moodMultiplier: 1.4,
+          specialAbility: '与主人的互动效果显著增强'
+        },
+        triggers: { minMutation: 80 }
+      }
+    ];
+    
+    // 筛选符合条件的突变
+    const availableMutations = mutations.filter(mutation => {
+      // 检查突变值要求
+      if (pet.mutation < mutation.triggers.minMutation) return false;
+      
+      // 检查宠物类型要求
+      if (mutation.triggers.petTypes && !mutation.triggers.petTypes.includes(pet.petType)) return false;
+      
+      // 检查是否已经拥有该突变
+      if (pet.mutations.includes(mutation.name)) return false;
+      
+      return true;
+    });
+    
+    if (availableMutations.length === 0) return null;
+    
+    // 根据稀有度加权选择
+    const weights = availableMutations.map(m => {
+      switch (m.rarity) {
+        case 'common': return 50;
+        case 'rare': return 25;
+        case 'epic': return 15;
+        case 'legendary': return 10;
+        default: return 30;
+      }
+    });
+    
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    let random = Math.random() * totalWeight;
+    
+    for (let i = 0; i < availableMutations.length; i++) {
+      random -= weights[i];
+      if (random <= 0) {
+        return availableMutations[i];
+      }
+    }
+    
+    return availableMutations[0]; // 备选
   }
 } 

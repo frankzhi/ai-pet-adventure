@@ -7,10 +7,11 @@ export interface Pet {
   background: string;
   characteristics: string[];
   personality: string;
-  health: number;
-  happiness: number;
-  energy: number;
-  hunger: number; // 0-100，0=很饿，100=很饱
+  // 重新设计的状态系统
+  health: number; // 0-100，健康值，0时死亡
+  mood: number; // 0-100，心情值，影响互动欲望和对话风格
+  energy: number; // 0-100，能量值，合并了原来的能量和饱食度
+  mutation: number; // 0-100，突变值，影响突变概率
   level: number;
   experience: number;
   createdAt: Date;
@@ -23,7 +24,14 @@ export interface Pet {
   // 新增：宠物当前状态
   currentActivity: string; // 当前活动描述
   lastActivityUpdate: Date; // 上次活动更新时间
-  mood: 'happy' | 'neutral' | 'sad' | 'excited' | 'tired' | 'hungry' | 'lonely'; // 当前心情
+  currentMoodState: 'happy' | 'neutral' | 'sad' | 'angry' | 'anxious' | 'tired' | 'excited' | 'lonely'; // 当前心情状态
+  // 新增：突变系统
+  mutations: string[]; // 突变标签列表
+  lastMutationCheck: Date; // 上次突变检查时间
+  // 新增：休息状态追踪
+  isResting: boolean; // 是否在休息状态
+  restStartTime?: Date; // 开始休息的时间
+  restDuration?: number; // 计划休息时长（分钟）
 }
 
 export interface Task {
@@ -34,10 +42,10 @@ export interface Task {
   category: 'feeding' | 'exercise' | 'care' | 'interaction' | 'training' | 'other';
   reward: {
     experience: number;
-    happiness: number;
+    mood: number; // 心情值变化
     health: number;
-    energy?: number;
-    hunger?: number;
+    energy: number; // 能量值变化
+    mutation?: number; // 突变值变化（可选）
   };
   isCompleted: boolean;
   createdAt: Date;
@@ -80,10 +88,10 @@ export interface RandomEvent {
   title: string;
   description: string;
   effect: {
-    happiness?: number;
+    mood?: number;
     health?: number;
     energy?: number;
-    hunger?: number;
+    mutation?: number;
     experience?: number;
   };
   timestamp: Date;
@@ -153,13 +161,34 @@ export interface PetInteractionConfig {
   minInterval: number; // 最小间隔时间（小时）
   maxInterval: number; // 最大间隔时间（小时）
   conditions: {
-    lowHappiness: boolean; // 低快乐度时主动互动
+    lowMood: boolean; // 低心情时主动互动
     lowHealth: boolean; // 低健康度时主动互动
     lowEnergy: boolean; // 低能量时主动互动
-    highHunger: boolean; // 高饥饿度时主动互动
+    highMutation: boolean; // 高突变值时主动互动
   };
   // 新增：根据性格类型调整互动频率
   personalityMultiplier: number; // 性格对互动频率的影响倍数
   // 新增：某些性格可能完全不主动互动
   canInitiate: boolean; // 是否可以主动互动
+}
+
+// 新增：突变定义
+export interface Mutation {
+  id: string;
+  name: string;
+  description: string;
+  type: 'physical' | 'behavioral' | 'ability' | 'appearance';
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  effects: {
+    moodMultiplier?: number; // 心情值变化倍数
+    energyMultiplier?: number; // 能量值变化倍数
+    healthMultiplier?: number; // 健康值变化倍数
+    specialAbility?: string; // 特殊能力描述
+  };
+  // 突变的触发条件
+  triggers: {
+    minMutation: number; // 最小突变值要求
+    petTypes?: ('animal' | 'robot' | 'plant' | 'magical' | 'food' | 'object')[]; // 适用的宠物类型
+    personalityTypes?: ('extroverted' | 'introverted' | 'calm' | 'energetic' | 'mysterious' | 'friendly' | 'aloof' | 'playful')[]; // 适用的性格类型
+  };
 } 

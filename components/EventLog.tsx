@@ -143,11 +143,11 @@ export default function EventLog() {
                       
                       {/* 事件效果 */}
                       <div className="flex items-center space-x-4 text-sm">
-                        {event.effect.happiness && (
+                        {event.effect.mood && (
                           <div className="flex items-center space-x-1">
                             <Heart className="w-4 h-4 text-pink-500" />
                             <span className="text-gray-600">
-                              {event.effect.happiness > 0 ? '+' : ''}{event.effect.happiness} 快乐
+                              {event.effect.mood > 0 ? '+' : ''}{event.effect.mood} 心情
                             </span>
                           </div>
                         )}
@@ -167,11 +167,11 @@ export default function EventLog() {
                             </span>
                           </div>
                         )}
-                        {event.effect.hunger && (
+                        {event.effect.mutation && (
                           <div className="flex items-center space-x-1">
-                            <Coffee className="w-4 h-4 text-orange-500" />
+                            <Coffee className="w-4 h-4 text-purple-500" />
                             <span className="text-gray-600">
-                              {event.effect.hunger > 0 ? '+' : ''}{event.effect.hunger} 饱食度
+                              {event.effect.mutation > 0 ? '+' : ''}{event.effect.mutation} 突变值
                             </span>
                           </div>
                         )}

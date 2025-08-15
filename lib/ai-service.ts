@@ -181,10 +181,11 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         background: petData.background,
         characteristics: petData.characteristics,
         personality: petData.personality,
+        // 新状态系统
         health: 100,
-        happiness: 100,
+        mood: 80, // 初始心情较好
         energy: 100,
-        hunger: 100, // 初始饱食度为100%
+        mutation: 0, // 初始无突变
         level: 1,
         experience: 0,
         createdAt: new Date(),
@@ -195,7 +196,11 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         personalityType,
         currentActivity: '正在适应新环境...',
         lastActivityUpdate: new Date(),
-        mood: 'happy',
+        currentMoodState: 'happy',
+        // 新增字段
+        mutations: [],
+        lastMutationCheck: new Date(),
+        isResting: false,
       };
     } catch (error) {
       console.error('生成宠物设定失败:', error);
@@ -260,10 +265,11 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         background: petData.background,
         characteristics: petData.characteristics,
         personality: petData.personality,
+        // 新状态系统
         health: 100,
-        happiness: 100,
+        mood: 80, // 初始心情较好
         energy: 100,
-        hunger: 100, // 初始饱食度为100%
+        mutation: 0, // 初始无突变
         level: 1,
         experience: 0,
         createdAt: new Date(),
@@ -274,7 +280,11 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         personalityType,
         currentActivity: '正在适应新环境...',
         lastActivityUpdate: new Date(),
-        mood: 'happy',
+        currentMoodState: 'happy',
+        // 新增字段
+        mutations: [],
+        lastMutationCheck: new Date(),
+        isResting: false,
       };
     } catch (error) {
       console.error('生成宠物设定失败:', error);
@@ -314,10 +324,9 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
     "completionMethod": "checkbox|physical|conversation|timer",
     "reward": {
       "experience": 10,
-      "happiness": 15,
+      "mood": 15,
       "health": 10,
-      "energy": 5,
-      "hunger": -10
+      "energy": 5
     },
     "physicalTask": {
       "action": "做10个蹲起",
@@ -379,7 +388,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         type: 'daily',
         category: 'feeding',
         completionMethod: 'checkbox',
-        reward: { experience: 10, happiness: 15, health: 10, energy: 20, hunger: -5 },
+        reward: { experience: 10, mood: 15, health: 10, energy: 20 },
         isCompleted: false,
         createdAt: new Date(),
         timerCompletionWindow: 10,
@@ -392,7 +401,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         type: 'daily',
         category: 'feeding',
         completionMethod: 'checkbox',
-        reward: { experience: 10, happiness: 15, health: 10, energy: 5, hunger: -5 },
+        reward: { experience: 10, mood: 15, health: 10, energy: 15 },
         isCompleted: false,
         createdAt: new Date(),
         timerCompletionWindow: 10,
@@ -405,7 +414,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         type: 'daily',
         category: 'feeding',
         completionMethod: 'checkbox',
-        reward: { experience: 10, happiness: 15, health: 10, energy: 5, hunger: -15 },
+        reward: { experience: 10, mood: 15, health: 10, energy: 25 },
         isCompleted: false,
         createdAt: new Date(),
         timerCompletionWindow: 10,
@@ -420,7 +429,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
       type: 'daily',
       category: 'interaction',
       completionMethod: 'conversation',
-      reward: { experience: 15, happiness: 20, health: 5, energy: 5 },
+      reward: { experience: 15, mood: 20, health: 5, energy: -5 },
       isCompleted: false,
       createdAt: new Date(),
       conversationTask: {
@@ -438,7 +447,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
       type: 'daily',
       category: 'exercise',
       completionMethod: 'physical',
-      reward: { experience: 20, happiness: 10, health: 15, energy: 10 },
+      reward: { experience: 20, mood: 10, health: 15, energy: -15 },
       isCompleted: false,
       createdAt: new Date(),
       physicalTask: {
@@ -476,11 +485,13 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
 
 当前状态：
 - 健康: ${pet.health}%
-- 快乐: ${pet.happiness}%
+- 心情值: ${pet.mood}%
 - 能量: ${pet.energy}%
-- 饱食度: ${pet.hunger}%
-- 心情: ${pet.mood}
+- 突变值: ${pet.mutation}%
+- 心情状态: ${pet.currentMoodState}
 - 当前活动: ${pet.currentActivity}
+- 是否在休息: ${pet.isResting ? '是' : '否'}
+- 突变标签: ${pet.mutations.length > 0 ? pet.mutations.join(', ') : '无'}
 
 对话历史：
 ${conversationHistory}
@@ -497,6 +508,9 @@ ${conversationHistory}
 5. 不要主动发起新的对话，只回应用户的输入
 6. 宠物就是具体的物体或生物，不要使用"精灵"、"能量体"、"元素形态"等抽象概念
 7. 绝对不要使用装可爱的语气，如"啦"、"哦"、"呢"、"~"等，不要使用颜文字，保持自然、真实的对话风格
+8. **重要**：如果宠物正在休息状态(isResting=true)，应该表现得困倦、不太愿意互动，回应简短且带有疲倦感
+9. 根据心情值调整对话态度：心情值低于30时显得消极、沉默；30-70时正常；高于70时积极热情
+10. 如果有突变标签，要在对话中体现突变带来的变化
 
 性格类型指导：
 - extroverted: 话多、热情、喜欢分享，会有很多肢体动作
@@ -581,8 +595,8 @@ ${conversationHistory}
     // 分析用户消息中的任务完成情况
     if (userMessage.includes('完成') || userMessage.includes('做了') || userMessage.includes('完成了')) {
       if (userMessage.includes('喂') || userMessage.includes('吃') || userMessage.includes('充电') || userMessage.includes('浇水')) {
-        statusUpdate.hunger = Math.min(100, pet.hunger + 15); // 增加饱食度
-        statusUpdate.happiness = Math.min(100, pet.happiness + 10);
+        statusUpdate.energy = Math.min(100, pet.energy + 15); // 增加能量
+        statusUpdate.mood = Math.min(100, pet.mood + 10);
         hasUpdate = true;
       }
       if (userMessage.includes('运动') || userMessage.includes('锻炼') || userMessage.includes('训练')) {
@@ -592,7 +606,7 @@ ${conversationHistory}
         hasUpdate = true;
       }
       if (userMessage.includes('聊天') || userMessage.includes('互动') || userMessage.includes('陪伴')) {
-        statusUpdate.happiness = Math.min(100, pet.happiness + 15);
+        statusUpdate.mood = Math.min(100, pet.mood + 15);
         statusUpdate.experience = pet.experience + 10;
         hasUpdate = true;
       }
@@ -600,8 +614,8 @@ ${conversationHistory}
 
     // 分析AI回应中的情感表达
     if (aiResponse.includes('开心') || aiResponse.includes('高兴') || aiResponse.includes('快乐')) {
-      statusUpdate.happiness = Math.min(100, pet.happiness + 5);
-      statusUpdate.mood = 'happy';
+      statusUpdate.mood = Math.min(100, pet.mood + 5);
+      statusUpdate.currentMoodState = 'happy';
       hasUpdate = true;
     }
 
@@ -660,8 +674,8 @@ ${conversationHistory}
         intensity,
         description,
         statusEffects: {
-          hunger: Math.min(100, pet.hunger + hungerBoost),
-          happiness: Math.min(100, pet.happiness + happinessBoost),
+          energy: Math.min(100, pet.energy + hungerBoost),
+          mood: Math.min(100, pet.mood + happinessBoost),
           health: Math.min(100, pet.health + 5)
         }
       });
@@ -690,7 +704,7 @@ ${conversationHistory}
         intensity,
         description: intensity === 'large' ? '进行了愉快的长时间游戏' : intensity === 'small' ? '进行了轻松的小游戏' : '一起玩了一会儿',
         statusEffects: {
-          happiness: Math.min(100, pet.happiness + happinessBoost),
+          mood: Math.min(100, pet.mood + happinessBoost),
           energy: Math.max(0, pet.energy - energyCost),
           experience: pet.experience + (intensity === 'large' ? 15 : intensity === 'small' ? 5 : 10)
         }
@@ -722,7 +736,10 @@ ${conversationHistory}
         statusEffects: {
           energy: Math.min(100, pet.energy + energyBoost),
           health: Math.min(100, pet.health + healthBoost),
-          mood: 'neutral' as any
+          currentMoodState: 'tired' as any,
+          isResting: true,
+          restStartTime: new Date(),
+          restDuration: intensity === 'large' ? 120 : intensity === 'small' ? 30 : 60 // 分钟
         }
       });
     }
@@ -756,7 +773,7 @@ ${conversationHistory}
           health: Math.min(100, pet.health + healthBoost),
           energy: Math.max(0, pet.energy - energyCost),
           experience: pet.experience + expBoost,
-          happiness: Math.min(100, pet.happiness + 8)
+          mood: Math.min(100, pet.mood + 8)
         }
       });
     }
@@ -785,8 +802,8 @@ ${conversationHistory}
         description: intensity === 'large' ? '接受了全面的照顾和护理' : intensity === 'small' ? '接受了简单的照顾' : '接受了悉心照顾',
         statusEffects: {
           health: Math.min(100, pet.health + healthBoost),
-          happiness: Math.min(100, pet.happiness + happinessBoost),
-          mood: 'happy' as any
+          mood: Math.min(100, pet.mood + happinessBoost),
+          currentMoodState: 'happy' as any
         }
       });
     }
@@ -814,9 +831,9 @@ ${conversationHistory}
         intensity,
         description: intensity === 'large' ? '得到了深深的安慰和关爱' : intensity === 'small' ? '得到了轻柔的安慰' : '得到了温暖的安慰',
         statusEffects: {
-          happiness: Math.min(100, pet.happiness + happinessBoost),
+          mood: Math.min(100, pet.mood + happinessBoost),
           health: Math.min(100, pet.health + healthBoost),
-          mood: 'happy' as any
+          currentMoodState: 'happy' as any
         }
       });
     }
@@ -911,9 +928,9 @@ ${conversationHistory}
 
 当前状态：
 - 健康: ${pet.health}%
-- 快乐: ${pet.happiness}%
+- 心情值: ${pet.mood}%
 - 能量: ${pet.energy}%
-- 饱食度: ${pet.hunger}%
+- 突变值: ${pet.mutation}%
 
 请以${pet.name}的身份主动发起对话，表达你的需求、感受或想法。对话要自然、符合角色设定，不要过于突兀。
 

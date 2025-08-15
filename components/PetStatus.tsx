@@ -224,16 +224,16 @@ export default function PetStatus({ pet }: PetStatusProps) {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-2">
                   <Heart className="w-5 h-5 text-pink-500" />
-                  <span className="text-sm font-medium text-gray-700">快乐</span>
+                  <span className="text-sm font-medium text-gray-700">心情</span>
                 </div>
-                <span className={`text-sm font-medium ${getStatusColor(pet.happiness)}`}>
-                  {pet.happiness}%
+                <span className={`text-sm font-medium ${getStatusColor(pet.mood)}`}>
+                  {pet.mood}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className={`${getStatusBarColor(pet.happiness)} h-2 rounded-full transition-all duration-300`}
-                  style={{ width: `${pet.happiness}%` }}
+                  className={`${getStatusBarColor(pet.mood)} h-2 rounded-full transition-all duration-300`}
+                  style={{ width: `${pet.mood}%` }}
                 ></div>
               </div>
             </div>
@@ -257,21 +257,21 @@ export default function PetStatus({ pet }: PetStatusProps) {
               </div>
             </div>
 
-            {/* 饱食度 */}
+            {/* 突变值 */}
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-2">
-                  <Coffee className="w-5 h-5 text-orange-500" />
-                  <span className="text-sm font-medium text-gray-700">饱食度</span>
+                  <Coffee className="w-5 h-5 text-purple-500" />
+                  <span className="text-sm font-medium text-gray-700">突变值</span>
                 </div>
-                <span className={`text-sm font-medium ${getStatusColor(pet.hunger)}`}>
-                  {pet.hunger}%
+                <span className={`text-sm font-medium ${getStatusColor(pet.mutation)}`}>
+                  {pet.mutation}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className={`${getStatusBarColor(pet.hunger)} h-2 rounded-full transition-all duration-300`}
-                  style={{ width: `${pet.hunger}%` }}
+                  className={`${getStatusBarColor(pet.mutation)} h-2 rounded-full transition-all duration-300`}
+                  style={{ width: `${pet.mutation}%` }}
                 ></div>
               </div>
             </div>
@@ -292,6 +292,23 @@ export default function PetStatus({ pet }: PetStatusProps) {
               {new Date(pet.lastInteraction).toLocaleString('zh-CN')}
             </p>
           </div>
+
+          {/* 突变标签 */}
+          {pet.mutations && pet.mutations.length > 0 && (
+            <div className="bg-purple-50 rounded-lg p-4">
+              <p className="text-sm text-purple-600 mb-2 font-medium">🧬 突变特性</p>
+              <div className="flex flex-wrap gap-2">
+                {pet.mutations.map((mutation, index) => (
+                  <span 
+                    key={index}
+                    className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full"
+                  >
+                    {mutation}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

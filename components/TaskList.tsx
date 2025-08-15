@@ -118,10 +118,10 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
         // 显示成功消息，包含详细的奖励信息
         const task = tasks.find(t => t.id === taskId);
         let rewardMessage = `任务完成！获得 ${task?.reward.experience || 0} 经验值`;
-        if (task?.reward.happiness) rewardMessage += `，快乐 +${task.reward.happiness}`;
+        if (task?.reward.mood) rewardMessage += `，心情 +${task.reward.mood}`;
         if (task?.reward.health) rewardMessage += `，健康 +${task.reward.health}`;
-        if (task?.reward.energy) rewardMessage += `，能量 +${task.reward.energy}`;
-        if (task?.reward.hunger) rewardMessage += `，饱食度 ${task.reward.hunger > 0 ? '+' : ''}${task.reward.hunger}`;
+        if (task?.reward.energy) rewardMessage += `，能量 ${task.reward.energy > 0 ? '+' : ''}${task.reward.energy}`;
+        if (task?.reward.mutation) rewardMessage += `，突变值 ${task.reward.mutation > 0 ? '+' : ''}${task.reward.mutation}`;
         
         alert(rewardMessage);
       } else {
@@ -366,7 +366,7 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
                       </div>
                       <div className="flex items-center space-x-1">
                         <span className="text-pink-500">❤️</span>
-                        <span className="text-gray-600">+{task.reward.happiness} 快乐</span>
+                        <span className="text-gray-600">+{task.reward.mood} 心情</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <span className="text-red-500">💖</span>
@@ -378,10 +378,10 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
                           <span className="text-gray-600">+{task.reward.energy} 能量</span>
                         </div>
                       )}
-                      {task.reward.hunger !== undefined && (
+                      {task.reward.mutation !== undefined && (
                         <div className="flex items-center space-x-1">
-                          <span className="text-orange-500">🍽️</span>
-                          <span className="text-gray-600">{task.reward.hunger > 0 ? '+' : ''}{task.reward.hunger} 饱食度</span>
+                          <span className="text-purple-500">🧬</span>
+                          <span className="text-gray-600">{task.reward.mutation > 0 ? '+' : ''}{task.reward.mutation} 突变值</span>
                         </div>
                       )}
                     </div>
