@@ -792,7 +792,8 @@ ${conversationHistory}
 - 数值变化范围：-30到+30
 - 经验值通常是正数
 - 根据对话内容和情绪判断变化幅度
-- 如果没有明显变化，返回空数组`;
+- 如果没有明显变化，返回空数组
+- 只返回纯JSON格式，不要包含任何markdown标记或解释文字`;
 
     try {
       const messages = [
@@ -801,7 +802,24 @@ ${conversationHistory}
       ];
       
       const response = await this.callDeepSeekAPI(messages);
-      const analysis = JSON.parse(response);
+      
+      // 清理AI返回的响应，移除可能的markdown标记
+      let cleanResponse = response.trim();
+      if (cleanResponse.startsWith('```json')) {
+        cleanResponse = cleanResponse.substring(7);
+      }
+      if (cleanResponse.startsWith('```')) {
+        cleanResponse = cleanResponse.substring(3);
+      }
+      if (cleanResponse.endsWith('```')) {
+        cleanResponse = cleanResponse.substring(0, cleanResponse.length - 3);
+      }
+      cleanResponse = cleanResponse.trim();
+      
+      console.log('AI返回的原始响应:', response);
+      console.log('清理后的响应:', cleanResponse);
+      
+      const analysis = JSON.parse(cleanResponse);
       
       return {
         actions: analysis.actions || [],
