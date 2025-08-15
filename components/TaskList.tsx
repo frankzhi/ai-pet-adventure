@@ -105,8 +105,10 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
       console.log('TaskList: 任务开始结果', result);
       
       if (result.success) {
-        // 刷新任务列表
-        window.location.reload();
+        // 不刷新页面，只更新状态
+        setActiveTaskId(taskId);
+        // 触发父组件更新
+        onTaskComplete(taskId, { started: true });
       } else {
         alert(result.message);
       }

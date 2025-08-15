@@ -136,7 +136,7 @@ export default function ChatInterface({ pet, conversations, onGameStateUpdate }:
   }
 
   return (
-    <div className="flex flex-col h-96">
+    <div className="flex flex-col h-[500px]">
       {/* 聊天头部 */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">

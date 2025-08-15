@@ -615,17 +615,24 @@ export class GameService {
       mutation: activePet.mutation
     });
     
+    // 安全地应用奖励，防止NaN
+    const safeAdd = (current: number, change: number, min: number = 0, max: number = 100): number => {
+      if (isNaN(current) || isNaN(change)) return Math.max(min, Math.min(max, 50)); // 默认值
+      const result = current + change;
+      return Math.max(min, Math.min(max, result));
+    };
+
     console.log("应用经验值奖励:", task.reward.experience);
-    activePet.experience += task.reward.experience;
+    activePet.experience = safeAdd(activePet.experience, task.reward.experience, 0, 999999);
     console.log("应用心情值奖励:", task.reward.mood);
-    activePet.mood = Math.min(100, activePet.mood + task.reward.mood);
+    activePet.mood = safeAdd(activePet.mood, task.reward.mood);
     console.log("应用健康值奖励:", task.reward.health);
-    activePet.health = Math.min(100, activePet.health + task.reward.health);
+    activePet.health = safeAdd(activePet.health, task.reward.health);
     console.log("应用能量值奖励:", task.reward.energy);
-    activePet.energy = Math.min(100, Math.max(0, activePet.energy + task.reward.energy));
+    activePet.energy = safeAdd(activePet.energy, task.reward.energy);
     
     if (task.reward.mutation !== undefined) {
-      activePet.mutation = Math.min(100, Math.max(0, activePet.mutation + task.reward.mutation));
+      activePet.mutation = safeAdd(activePet.mutation, task.reward.mutation);
     }
     
     console.log('任务完成后状态:', {
