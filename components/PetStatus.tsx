@@ -208,7 +208,7 @@ export default function PetStatus({ pet }: PetStatusProps) {
                   <span className="text-sm font-medium text-gray-700">健康</span>
                 </div>
                 <span className={`text-sm font-medium ${getStatusColor(pet.health)}`}>
-                  {pet.health}%
+                  {Math.round(pet.health)}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -227,7 +227,7 @@ export default function PetStatus({ pet }: PetStatusProps) {
                   <span className="text-sm font-medium text-gray-700">心情</span>
                 </div>
                 <span className={`text-sm font-medium ${getStatusColor(pet.mood)}`}>
-                  {pet.mood}%
+                  {Math.round(pet.mood)}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -246,7 +246,7 @@ export default function PetStatus({ pet }: PetStatusProps) {
                   <span className="text-sm font-medium text-gray-700">能量</span>
                 </div>
                 <span className={`text-sm font-medium ${getStatusColor(pet.energy)}`}>
-                  {pet.energy}%
+                  {Math.round(pet.energy)}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -265,7 +265,7 @@ export default function PetStatus({ pet }: PetStatusProps) {
                   <span className="text-sm font-medium text-gray-700">突变值</span>
                 </div>
                 <span className={`text-sm font-medium ${getStatusColor(pet.mutation)}`}>
-                  {pet.mutation}%
+                  {Math.round(pet.mutation)}%
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
