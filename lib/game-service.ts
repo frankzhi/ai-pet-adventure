@@ -503,7 +503,7 @@ export class GameService {
     const task: Task = {
       id: Date.now().toString() + '_interactive',
       title: `${action.description}`,
-      description: `基于对话"${originalMessage}"生成的互动任务：${action.description}`,
+      description: `${action.description}`,
       type: 'special',
       category: taskTypeMap[action.type] as any,
       completionMethod: 'checkbox',

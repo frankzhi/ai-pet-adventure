@@ -16,10 +16,8 @@ interface PetGameProps {
 }
 
 export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: PetGameProps) {
-  const [activeTab, setActiveTab] = useState<'status' | 'tasks' | 'chat' | 'events'>('status')
   const [currentStory, setCurrentStory] = useState('')
   const [activePet, setActivePet] = useState<Pet | null>(null)
-  // 移除forceUpdate状态 // 强制更新计数器
 
   // 每次gameState变化时，强制重新获取数据
   useEffect(() => {
@@ -60,13 +58,6 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
     }
   }
 
-  const tabs = [
-    { id: 'status', label: '宠物状态', icon: Heart },
-    { id: 'tasks', label: '任务列表', icon: List },
-    { id: 'chat', label: '对话互动', icon: MessageCircle },
-    { id: 'events', label: '事件日志', icon: BookOpen },
-  ]
-
   if (!activePet) {
     return (
       <div className="text-center py-8">
@@ -103,122 +94,114 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* 顶部信息栏 */}
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">
-              {activePet.name} 的世界
-            </h2>
-            <p className="text-gray-600">{gameState.worldGenre}</p>
-          </div>
+    <div className="max-w-7xl mx-auto p-4">
+      {/* 顶部导航栏 */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <button
-              onClick={handleResetDailyTasks}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>重置日常任务</span>
-            </button>
-            <button
-              onClick={handleDeleteGame}
-              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>删除游戏</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 宠物选择器 */}
-        {gameState.pets.length > 1 && (
-          <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium text-gray-800 mb-3 flex items-center">
-              <Users className="w-4 h-4 mr-2" />
-              选择宠物
-            </h3>
-            <div className="flex space-x-3">
+            <h1 className="text-xl font-bold text-gray-800">AI宠物冒险</h1>
+            <div className="flex items-center space-x-2">
               {gameState.pets.map((pet) => (
                 <button
                   key={pet.id}
                   onClick={() => handleSwitchPet(pet.id)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                     pet.id === gameState.activePetId
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  <span>{pet.name}</span>
-                  {pet.id !== gameState.activePetId && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleRemovePet(pet.id)
-                      }}
-                      className="ml-2 text-red-500 hover:text-red-700"
-                    >
-                      ×
-                    </button>
-                  )}
+                  {pet.name}
                 </button>
               ))}
             </div>
           </div>
-        )}
-
-        {/* 当前故事 */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4">
-          <h3 className="font-medium text-gray-800 mb-2">📖 当前故事</h3>
-          <p className="text-gray-700 whitespace-pre-line">{currentStory}</p>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleResetDailyTasks}
+              className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span className="text-sm">重置任务</span>
+            </button>
+            <button
+              onClick={handleDeleteGame}
+              className="flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="text-sm">删除游戏</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* 标签页导航 */}
-      <div className="bg-white rounded-lg shadow-lg mb-6">
-        <div className="flex border-b">
-          {tabs.map((tab) => {
-            const Icon = tab.icon
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center space-x-2 px-6 py-4 font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                <span>{tab.label}</span>
-              </button>
-            )
-          })}
+      {/* 主要内容区域 - 三栏布局 */}
+      <div className="grid grid-cols-12 gap-4">
+        {/* 左侧：压缩的状态面板 */}
+        <div className="col-span-3">
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+              <Heart className="w-5 h-5 mr-2" />
+              状态
+            </h2>
+            <PetStatus pet={activePet} />
+          </div>
         </div>
 
-        {/* 标签页内容 */}
-        <div className="p-6">
-          {activeTab === 'status' && activePet && (
-            <PetStatus key={activePet.id} pet={activePet} />
-          )}
-          {activeTab === 'tasks' && (
-            <TaskList 
-              tasks={gameState.tasks} 
+        {/* 中间：任务列表 */}
+        <div className="col-span-4">
+          <div className="bg-white rounded-lg shadow-sm p-4 h-[600px] overflow-y-auto">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+              <List className="w-5 h-5 mr-2" />
+              任务列表
+            </h2>
+            <TaskList
+              tasks={gameState.tasks}
               onTaskComplete={handleTaskComplete}
             />
-          )}
-          {activeTab === 'chat' && activePet && (
-            <ChatInterface 
-              pet={activePet}
-              conversations={gameState.conversations}
-              onGameStateUpdate={onGameStateUpdate}
-            />
-          )}
-          {activeTab === 'events' && (
-            <EventLog />
-          )}
+          </div>
+        </div>
+
+        {/* 右侧：对话互动 */}
+        <div className="col-span-5">
+          <div className="bg-white rounded-lg shadow-sm p-4 h-[600px] flex flex-col">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+              <MessageCircle className="w-5 h-5 mr-2" />
+              对话互动
+            </h2>
+            <div className="flex-1 overflow-hidden">
+              <ChatInterface
+                pet={activePet}
+                conversations={gameState.conversations}
+                onGameStateUpdate={onGameStateUpdate}
+              />
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* 底部：事件日志 */}
+      <div className="mt-4">
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+            <BookOpen className="w-5 h-5 mr-2" />
+            事件日志
+          </h2>
+          <div className="h-48 overflow-y-auto">
+            <EventLog />
+          </div>
+        </div>
+      </div>
+
+      {/* 故事背景 */}
+      {currentStory && (
+        <div className="mt-4">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">故事背景</h3>
+            <p className="text-gray-700 text-sm leading-relaxed">{currentStory}</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 
