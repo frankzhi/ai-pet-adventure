@@ -317,11 +317,16 @@ export class GameService {
       let statusUpdateMessage = '';
       let experienceGained = 0;
       
-      // 如果识别到状态恢复动作，立即执行
-      if (dialogueAnalysis.actions.length > 0) {
-        for (const action of dialogueAnalysis.actions) {
-          // 应用状态效果
-          Object.assign(activePet, action.statusEffects);
+              // 如果识别到状态恢复动作，立即执行
+        if (dialogueAnalysis.actions.length > 0) {
+          for (const action of dialogueAnalysis.actions) {
+            // 应用状态效果，确保数值有效
+            Object.keys(action.statusEffects).forEach(key => {
+              const value = action.statusEffects[key as keyof Pet];
+              if (typeof value === 'number' && !isNaN(value) && isFinite(value)) {
+                (activePet as any)[key] = value;
+              }
+            });
           
           // 记录活动日志
           gameState.activityLogs.push({
@@ -503,6 +508,19 @@ export class GameService {
 
     const task = gameState.tasks.find(t => t.id === taskId);
     if (!task || task.isCompleted) return { success: false, message: '任务不存在或已完成' };
+    
+    // 检查任务是否过期
+    const now = new Date();
+    if (task.isExpired || now > new Date(task.expiresAt)) {
+      task.isExpired = true;
+      this.saveGameState(gameState);
+      return { success: false, message: '任务已过期，无法完成' };
+    }
+    
+    // 检查任务是否已开始
+    if (!task.isStarted) {
+      return { success: false, message: '请先开始任务再完成' };
+    }
 
     const activePetIndex = gameState.pets.findIndex(pet => pet.id === gameState.activePetId);
     if (activePetIndex === -1) return { success: false, message: '宠物未找到' };

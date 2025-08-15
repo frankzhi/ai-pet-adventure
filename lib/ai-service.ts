@@ -108,25 +108,28 @@ export class AIService {
   ): Promise<Pet> {
     const personalityType = this.generatePersonalityType();
     
-    const prompt = `你是一个有趣的创意作家，需要根据图像分析结果创建一个独特的电子宠物角色。
+    const prompt = `你需要根据图像分析结果创建一个同伴角色。在这个世界里，任何东西都可以自然地成为你的伙伴。
 
 图像分析结果：
 - 识别物体: ${imageAnalysis.objects.join(', ')}
 - 主要颜色: ${imageAnalysis.colors.join(', ')}
 - 详细描述: ${imageAnalysis.description}
-- 识别置信度: ${imageAnalysis.confidence}
 
-${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
+${genre ? `风格/题材: ${genre}` : '风格/题材: 日常生活'}
 
-性格类型: ${personalityType} (请根据这个性格类型来设计角色)
+性格类型: ${personalityType}
 
-请基于上述图像分析结果，创建一个完整的宠物角色设定。宠物应该与识别出的物体、颜色和特征高度相关。
+**重要设定原则**：
+- 这个世界里，任何东西成为同伴都是理所当然的，无需解释原因
+- 不要编造"AI化"、"获得意识"、"魔法觉醒"等来历
+- 如果是职业（程序员、调酒师等），就按该职业特点设定
+- 语言要极度日常化，像介绍朋友一样自然
 
-请创建一个完整的宠物角色设定，包括：
-1. 世界设定（可以是科幻、奇幻、现实、神话等任何风格，但要与识别内容相关，风格要轻松有趣）
-2. 背景故事（宠物的来历、特殊能力等，要与识别出的物体和特征相关，要有趣但不严肃）
-3. 性格特征（3-5个关键词，体现识别物体的特点和指定的性格类型）
-4. 个性描述（一段话描述，要基于识别内容和性格类型，语言要日常化、风趣幽默）
+请创建同伴设定：
+1. 世界设定（简单自然的日常世界，这个同伴就存在其中）
+2. 背景故事（简单的日常背景，不需要复杂解释）
+3. 性格特征（3-5个日常化的特点）
+4. 个性描述（用朋友聊天的语气，简单直白）
 
 性格类型说明：
 - extroverted: 外向、话多、喜欢社交
@@ -140,24 +143,24 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
 
 请以JSON格式返回，格式如下：
 {
-  "name": "宠物名字",
-  "type": "宠物类型",
-  "worldSetting": "世界设定描述",
-  "background": "背景故事",
+  "name": "同伴名字（日常化）",
+  "type": "同伴类型",
+  "worldSetting": "日常世界描述",
+  "background": "简单日常背景",
   "characteristics": ["特征1", "特征2", "特征3"],
-  "personality": "个性描述"
+  "personality": "朋友语气的个性描述"
 }
 
 重要要求：
-1. 宠物设定要与图像分析结果高度相关，不要生成"精灵"、"能量体"、"元素形态"等抽象概念
-2. 如果用户输入的是具体物体（如"一瓶冰红茶"），就直接基于这个物体来设定，不要变成"红茶精灵"等抽象概念
-3. 宠物应该就是那个具体的物体或生物，具有该物体/生物的特征和习性
-4. 语言风格要日常化、风趣幽默，不要过于文学化或严肃
-5. 绝对禁止使用"精灵"、"能量体"、"元素形态"、"概念化"等抽象词汇
-6. 绝对不要使用装可爱的语气，如"啦"、"哦"、"呢"、"~"等，不要使用颜文字，保持自然、真实的描述风格`;
+1. 同伴就是识别出的那个东西，在这个世界里很自然地存在
+2. 绝对不要编造"AI化"、"获得意识"、"魔法觉醒"等来历
+3. 如果是职业（程序员、调酒师），就按职业特点设定，很自然
+4. 语言必须极度日常化，像介绍朋友一样
+5. 禁用"精灵"、"能量体"、"元素"等玄幻词汇
+6. 禁用"啦"、"哦"、"呢"、"~"等卖萌语气和颜文字`;
 
     const messages = [
-      { role: 'system', content: '你是一个创意作家，专门创作有趣的电子宠物角色设定。请确保每个角色都是独特的，基于图像分析的具体结果和指定的性格类型。' },
+      { role: 'system', content: '你专门创作日常化的同伴角色。在这个世界里，任何东西都可以自然地成为同伴，无需解释原因。语言要极度日常化，像介绍朋友一样。' },
       { role: 'user', content: prompt }
     ];
 
@@ -211,14 +214,17 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
   static async generatePetFromImage(imageDescription: string, genre?: string): Promise<Pet> {
     const personalityType = this.generatePersonalityType();
     
-    const prompt = `你是一个创意作家，需要根据描述创建一个独特的电子宠物角色。
+    const prompt = `根据描述创建一个同伴角色。在这个世界里，任何东西都可以自然地成为同伴。
 
 描述: ${imageDescription}
-${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
+${genre ? `风格/题材: ${genre}` : '风格/题材: 日常生活'}
 
-性格类型: ${personalityType} (请根据这个性格类型来设计角色)
+性格类型: ${personalityType}
 
-请基于上述描述，创建一个完整的宠物角色设定。
+**重要原则**：
+- 同伴就是描述的那个东西，很自然地存在
+- 不要编造"AI化"、"获得意识"等来历
+- 语言要极度日常化，像介绍朋友
 
 性格类型说明：
 - extroverted: 外向、话多、喜欢社交
@@ -230,18 +236,18 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
 - aloof: 冷漠、疏远、难以接近
 - playful: 爱玩、调皮、有趣
 
-请以JSON格式返回，格式如下：
+请以JSON格式返回：
 {
-  "name": "宠物名字",
-  "type": "宠物类型",
-  "worldSetting": "世界设定描述",
-  "background": "背景故事",
+  "name": "同伴名字（日常化）",
+  "type": "同伴类型",
+  "worldSetting": "日常世界描述",
+  "background": "简单日常背景",
   "characteristics": ["特征1", "特征2", "特征3"],
-  "personality": "个性描述"
+  "personality": "朋友语气的个性描述"
 }`;
 
     const messages = [
-      { role: 'system', content: '你是一个创意作家，专门创作有趣的电子宠物角色设定。' },
+      { role: 'system', content: '你专门创作日常化的同伴角色。任何东西都可以自然地成为同伴。语言要极度日常化。' },
       { role: 'user', content: prompt }
     ];
 
@@ -388,7 +394,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         type: 'daily',
         category: 'feeding',
         completionMethod: 'checkbox',
-              reward: { experience: 10, mood: 15, health: 10, energy: 20 },
+              reward: { experience: 10, mood: 15, health: 5, energy: 20 },
       isCompleted: false,
       isExpired: false,
       isStarted: false,
@@ -438,7 +444,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
       type: 'daily',
       category: 'interaction',
       completionMethod: 'conversation',
-      reward: { experience: 15, mood: 20, health: 5, energy: -5 },
+              reward: { experience: 15, mood: 20, health: 5, energy: -8 },
       isCompleted: false,
       isExpired: false,
       isStarted: false,
@@ -459,7 +465,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
       type: 'daily',
       category: 'exercise',
       completionMethod: 'physical',
-      reward: { experience: 20, mood: 10, health: 15, energy: -15 },
+              reward: { experience: 20, mood: 8, health: 15, energy: -18 },
       isCompleted: false,
       isExpired: false,
       isStarted: false,
@@ -484,7 +490,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         description: '参与一项基因改造实验，可能带来意想不到的变化',
         riskLevel: 'extreme' as const,
         riskDescription: '大幅增加突变值，但全面提升其他状态',
-        reward: { experience: 50, mood: 30, health: 25, energy: 40, mutation: 15 },
+        reward: { experience: 50, mood: 25, health: 20, energy: 35, mutation: 20 },
         category: 'other' as const,
         expiresIn: 20 // 20分钟
       },
@@ -493,7 +499,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         description: '参加一项极限运动，挑战身体和心理极限',
         riskLevel: 'high' as const,
         riskDescription: '大量消耗能量，但极大提升心情和经验',
-        reward: { experience: 40, mood: 50, health: 10, energy: -30, mutation: 3 },
+        reward: { experience: 40, mood: 45, health: 8, energy: -35, mutation: 5 },
         category: 'exercise' as const,
         expiresIn: 25 // 25分钟
       },
@@ -502,7 +508,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         description: '尝试一种神秘的能量药剂，效果未知',
         riskLevel: 'high' as const,
         riskDescription: '可能获得大量能量，也可能产生副作用',
-        reward: { experience: 30, mood: -10, health: -15, energy: 60, mutation: 8 },
+        reward: { experience: 25, mood: -12, health: -18, energy: 65, mutation: 12 },
         category: 'other' as const,
         expiresIn: 15 // 15分钟
       },
@@ -511,7 +517,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         description: '参与一项深度情感连接实验',
         riskLevel: 'medium' as const,
         riskDescription: '可能获得巨大的情感满足，但会消耗大量精力',
-        reward: { experience: 35, mood: 60, health: 5, energy: -25, mutation: 2 },
+        reward: { experience: 30, mood: 55, health: 3, energy: -28, mutation: 4 },
         category: 'interaction' as const,
         expiresIn: 35 // 35分钟
       },
@@ -520,7 +526,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 随机创意风格'}
         description: '尝试进行量子层面的意识跃迁',
         riskLevel: 'extreme' as const,
         riskDescription: '极大的风险和回报，可能彻底改变存在状态',
-        reward: { experience: 80, mood: 20, health: -20, energy: 30, mutation: 25 },
+        reward: { experience: 75, mood: 15, health: -25, energy: 25, mutation: 30 },
         category: 'other' as const,
         expiresIn: 10 // 10分钟
       }
@@ -587,16 +593,16 @@ ${conversationHistory}
 请以${pet.name}的身份回应，保持角色设定的一致性。回应要自然、有趣，符合宠物的性格特点。
 
 重要要求：
-1. 语言风格要日常化、风趣幽默，不要过于文学化或严肃
-2. 根据性格类型调整回应的长度和语气
-3. 内向的宠物应该话少，外向的宠物可以话多
-4. 在回应中描述宠物的肢体动作，让互动更有代入感
-5. 不要主动发起新的对话，只回应用户的输入
-6. 宠物就是具体的物体或生物，不要使用"精灵"、"能量体"、"元素形态"等抽象概念
-7. 绝对不要使用装可爱的语气，如"啦"、"哦"、"呢"、"~"等，不要使用颜文字，保持自然、真实的对话风格
-8. **重要**：如果宠物正在休息状态(isResting=true)，应该表现得困倦、不太愿意互动，回应简短且带有疲倦感
-9. 根据心情值调整对话态度：心情值低于30时显得消极、沉默；30-70时正常；高于70时积极热情
-10. 如果有突变标签，要在对话中体现突变带来的变化
+1. **语言风格必须极度日常化**：像朋友聊天一样自然，用口语化表达，避免任何文学性或书面语
+2. 用简单直白的话，不要用华丽词汇或成语
+3. 根据性格类型调整：内向话少，外向话多
+4. 描述动作要简单直接，比如"伸了个懒腰"、"挠挠头"、"打了个哈欠"
+5. 只回应用户，不主动开话题
+6. **绝对禁止**：不要说"精灵"、"能量体"、"元素"这些玄幻词汇
+7. **绝对禁止**：不用"啦"、"哦"、"呢"、"~"等卖萌语气，不用颜文字
+8. 休息时要显得很困，话很少，比如"嗯...困..."
+9. 心情差时话少且没劲，心情好时活泼一些
+10. 有突变时要自然地体现变化，不要刻意强调
 
 性格类型指导：
 - extroverted: 话多、热情、喜欢分享，会有很多肢体动作
