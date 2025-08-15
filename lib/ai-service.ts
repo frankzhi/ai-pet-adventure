@@ -320,6 +320,13 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 日常生活'}
 - 互动任务：可以是对话任务（需要特定对话）或物理任务（如做运动）
 - 训练任务：根据宠物特点的训练活动
 
+**重要要求**：
+- 任务奖励必须有正有负，不能全是正向的
+- 经验值通常是正的，但其他状态值应该有增有减
+- 互动任务通常消耗能量（负值），但提升心情
+- 运动任务消耗能量但提升健康
+- 喂养任务提升能量但可能消耗其他状态
+
 请以JSON格式返回，格式如下：
 [
   {
@@ -332,7 +339,7 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 日常生活'}
       "experience": 10,
       "mood": 15,
       "health": 10,
-      "energy": 5
+      "energy": -5
     },
     "physicalTask": {
       "action": "做10个蹲起",
@@ -749,16 +756,18 @@ ${conversationHistory}
     // 喂食相关
     if (message.includes('去吃') || message.includes('吃点') || message.includes('喂你') || 
         message.includes('吃东西') || message.includes('吃饭') || message.includes('进食') ||
-        message.includes('充电') || message.includes('浇水') || message.includes('补充能量')) {
+        message.includes('充电') || message.includes('浇水') || message.includes('补充能量') ||
+        message.includes('撸串') || message.includes('烧烤') || message.includes('请客')) {
       
       let intensity: 'small' | 'medium' | 'large' = 'medium';
       let hungerBoost = 20;
       let happinessBoost = 10;
       
-      if (message.includes('大餐') || message.includes('好好吃') || message.includes('饱餐')) {
+      if (message.includes('大餐') || message.includes('好好吃') || message.includes('饱餐') ||
+          message.includes('撸串') || message.includes('烧烤') || message.includes('请客')) {
         intensity = 'large';
         hungerBoost = 35;
-        happinessBoost = 15;
+        happinessBoost = 20;
       } else if (message.includes('点心') || message.includes('小食') || message.includes('零食')) {
         intensity = 'small';
         hungerBoost = 10;
@@ -851,17 +860,19 @@ ${conversationHistory}
     
     // 运动相关
     if (message.includes('运动') || message.includes('锻炼') || message.includes('活动') || 
-        message.includes('散步') || message.includes('跑步') || message.includes('训练')) {
+        message.includes('散步') || message.includes('跑步') || message.includes('训练') ||
+        message.includes('深蹲') || message.includes('健身') || message.includes('撸铁')) {
       
       let intensity: 'small' | 'medium' | 'large' = 'medium';
       let healthBoost = 15;
       let energyCost = 15;
       let expBoost = 12;
       
-      if (message.includes('激烈') || message.includes('大量') || message.includes('强化')) {
+      if (message.includes('激烈') || message.includes('大量') || message.includes('强化') ||
+          message.includes('200个') || message.includes('突破') || message.includes('拼命')) {
         intensity = 'large';
         healthBoost = 25;
-        energyCost = 25;
+        energyCost = 35;
         expBoost = 20;
       } else if (message.includes('轻松') || message.includes('简单') || message.includes('散步')) {
         intensity = 'small';
@@ -879,6 +890,21 @@ ${conversationHistory}
           energy: Math.max(0, pet.energy - energyCost),
           experience: pet.experience + expBoost,
           mood: Math.min(100, pet.mood + 8)
+        }
+      });
+    }
+    
+    // 情绪状态分析 - 负面情绪
+    if (message.includes('认错') || message.includes('记错') || message.includes('不好意思') ||
+        message.includes('抱歉') || message.includes('对不起') || message.includes('搞错了')) {
+      
+      actions.push({
+        type: 'comfort',
+        intensity: 'small',
+        description: '因为认错而感到尴尬',
+        statusEffects: {
+          mood: Math.max(0, pet.mood - 8),
+          energy: Math.max(0, pet.energy - 3)
         }
       });
     }
