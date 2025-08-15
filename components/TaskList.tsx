@@ -98,6 +98,23 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
     }
   }
 
+  const handleTaskStart = (taskId: string) => {
+    try {
+      console.log('TaskList: 开始任务', taskId);
+      const result = GameService.startTask(taskId);
+      console.log('TaskList: 任务开始结果', result);
+      
+      if (result.success) {
+        // 刷新任务列表
+        window.location.reload();
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error('开始任务失败:', error);
+    }
+  }
+
   const handleTaskComplete = (taskId: string, completionData?: any) => {
     try {
       console.log('TaskList: 开始完成任务', taskId, completionData);
@@ -204,7 +221,23 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
       );
     }
 
-    if (activeTaskId !== task.id && !hasActiveTimer) {
+    if (activeTaskId !== task.id && !hasActiveTimer && !task.isStarted) {
+      return (
+        <button
+          onClick={() => {
+            // 先开始任务
+            handleTaskStart(task.id);
+          }}
+          className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+        >
+          <CheckCircle className="w-4 h-4" />
+          <span>开始</span>
+        </button>
+      );
+    }
+
+    // 如果任务已开始但不在进行中，显示继续按钮
+    if (task.isStarted && activeTaskId !== task.id && !hasActiveTimer) {
       return (
         <button
           onClick={() => {
@@ -222,10 +255,10 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
                 handleTaskComplete(task.id);
             }
           }}
-          className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+          className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
         >
           <CheckCircle className="w-4 h-4" />
-          <span>开始</span>
+          <span>继续</span>
         </button>
       );
     }
@@ -327,9 +360,34 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
                           {task.category}
                         </span>
                       )}
+                      {task.riskLevel && (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600">
+                          {task.riskLevel === 'extreme' ? '极高风险' : 
+                           task.riskLevel === 'high' ? '高风险' : 
+                           task.riskLevel === 'medium' ? '中等风险' : '低风险'}
+                        </span>
+                      )}
                     </div>
                     <h5 className="font-medium text-gray-800 mb-2">{task.title}</h5>
                     <p className="text-gray-600 text-sm mb-3">{task.description}</p>
+                    
+                    {/* 任务过期状态 */}
+                    {task.isExpired && (
+                      <div className="mb-3 p-3 bg-red-50 rounded-lg">
+                        <p className="text-sm text-red-700">
+                          <strong>⚠️ 任务已过期</strong>
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* 风险描述 */}
+                    {task.riskDescription && (
+                      <div className="mb-3 p-3 bg-orange-50 rounded-lg">
+                        <p className="text-sm text-orange-700">
+                          <strong>⚠️ 风险提示:</strong> {task.riskDescription}
+                        </p>
+                      </div>
+                    )}
                     
                     {/* 任务详情 */}
                     {task.physicalTask && (
@@ -362,20 +420,24 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
                     <div className="flex items-center space-x-4 text-sm">
                       <div className="flex items-center space-x-1">
                         <Star className="w-4 h-4 text-yellow-500" />
-                        <span className="text-gray-600">+{task.reward.experience} 经验</span>
+                        <span className="text-gray-600">{task.reward.experience > 0 ? '+' : ''}{task.reward.experience} 经验</span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <span className="text-pink-500">❤️</span>
-                        <span className="text-gray-600">+{task.reward.mood} 心情</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <span className="text-red-500">💖</span>
-                        <span className="text-gray-600">+{task.reward.health} 健康</span>
-                      </div>
+                      {task.reward.mood !== undefined && (
+                        <div className="flex items-center space-x-1">
+                          <span className="text-pink-500">❤️</span>
+                          <span className="text-gray-600">{task.reward.mood > 0 ? '+' : ''}{task.reward.mood} 心情</span>
+                        </div>
+                      )}
+                      {task.reward.health !== undefined && (
+                        <div className="flex items-center space-x-1">
+                          <span className="text-red-500">💖</span>
+                          <span className="text-gray-600">{task.reward.health > 0 ? '+' : ''}{task.reward.health} 健康</span>
+                        </div>
+                      )}
                       {task.reward.energy !== undefined && (
                         <div className="flex items-center space-x-1">
                           <span className="text-blue-500">⚡</span>
-                          <span className="text-gray-600">+{task.reward.energy} 能量</span>
+                          <span className="text-gray-600">{task.reward.energy > 0 ? '+' : ''}{task.reward.energy} 能量</span>
                         </div>
                       )}
                       {task.reward.mutation !== undefined && (
