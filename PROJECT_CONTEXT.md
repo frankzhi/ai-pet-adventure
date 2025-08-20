@@ -13,10 +13,18 @@ AI宠物冒险是一个基于Next.js的交互式宠物养成游戏，使用AI对
 ## 当前部署状态
 - **生产环境**: https://ai-pet-adventure-13nmek7v2-freedomztm-7943s-projects.vercel.app
 - **GitHub仓库**: https://github.com/frankzhi/ai-pet-adventure.git
-- **最后部署时间**: 2025-08-20 15:30:36 UTC
-- **最后提交**: cdfd67f - 优化PC端布局适配：重构PetStatus组件为紧凑布局，解决状态面板过度拉长问题
+- **最后部署时间**: 2025-08-20 15:40:25 UTC
+- **最后提交**: 4a12d57 - 修复AI响应JSON解析错误：添加markdown代码块清理逻辑，解决创建宠物时的JSON解析失败问题
 
 ## 最近优化内容
+
+### AI响应JSON解析修复 (2025-08-20)
+- **问题**: AI返回的JSON响应包含markdown代码块标记（```json），导致JSON.parse解析失败
+- **解决方案**: 
+  - 添加cleanAIResponse通用函数清理markdown标记
+  - 修复所有JSON.parse调用点
+  - 统一处理AI响应的格式清理
+  - 增强错误处理和容错机制
 
 ### PC端布局适配优化 (2025-08-20)
 - **问题**: 状态面板在PC端屏幕上被过度拉长，导致页面布局分割，视觉不平衡
