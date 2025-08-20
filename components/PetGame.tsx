@@ -95,18 +95,18 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      {/* 顶部导航栏 */}
+      {/* 顶部导航栏 - 更紧凑 */}
       <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-bold text-gray-800">AI宠物冒险</h1>
-              <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-6">
+              <h1 className="text-xl font-bold text-gray-800">AI宠物冒险</h1>
+              <div className="flex items-center space-x-2">
                 {gameState.pets.map((pet) => (
                   <button
                     key={pet.id}
                     onClick={() => handleSwitchPet(pet.id)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
                       pet.id === gameState.activePetId
                         ? 'bg-blue-100 text-blue-700 shadow-sm'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -117,17 +117,17 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
                 ))}
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               <button
                 onClick={handleResetDailyTasks}
-                className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                className="flex items-center space-x-1 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span className="text-sm font-medium">重置任务</span>
               </button>
               <button
                 onClick={handleDeleteGame}
-                className="flex items-center space-x-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                className="flex items-center space-x-1 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
                 <span className="text-sm font-medium">删除游戏</span>
@@ -137,29 +137,29 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
         </div>
       </div>
 
-      {/* 主要内容区域 */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* 第一行：状态面板和任务列表 */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8 mb-8">
-          {/* 左侧：状态面板 - 占用2列 */}
-          <div className="xl:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                <Heart className="w-6 h-6 mr-3 text-red-500" />
+      {/* 主要内容区域 - 优化2K屏幕布局 */}
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        {/* 核心功能区域 - 一屏显示 */}
+        <div className="grid grid-cols-12 gap-4 h-[calc(100vh-120px)]">
+          {/* 左侧：状态面板 - 3列 */}
+          <div className="col-span-3">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full overflow-y-auto">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <Heart className="w-5 h-5 mr-2 text-red-500" />
                 宠物状态
               </h2>
               <PetStatus pet={activePet} />
             </div>
           </div>
 
-          {/* 右侧：任务列表 - 占用3列 */}
-          <div className="xl:col-span-3">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                <List className="w-6 h-6 mr-3 text-blue-500" />
+          {/* 中间：任务列表 - 4列 */}
+          <div className="col-span-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full flex flex-col">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <List className="w-5 h-5 mr-2 text-blue-500" />
                 任务列表
               </h2>
-              <div className="h-[600px] overflow-y-auto pr-2">
+              <div className="flex-1 overflow-y-auto">
                 <TaskList
                   tasks={gameState.tasks}
                   onTaskComplete={handleTaskComplete}
@@ -167,18 +167,15 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
               </div>
             </div>
           </div>
-        </div>
 
-        {/* 第二行：对话互动区域 */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
-          {/* 对话互动 - 占用2列 */}
-          <div className="xl:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                <MessageCircle className="w-6 h-6 mr-3 text-green-500" />
+          {/* 右侧：对话互动 - 5列，更突出 */}
+          <div className="col-span-5">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-full flex flex-col">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <MessageCircle className="w-5 h-5 mr-2 text-green-500" />
                 对话互动
               </h2>
-              <div className="h-[500px]">
+              <div className="flex-1">
                 <ChatInterface
                   pet={activePet}
                   conversations={gameState.conversations}
@@ -187,33 +184,43 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
               </div>
             </div>
           </div>
-
-          {/* 右侧：事件日志 - 占用1列 */}
-          <div className="xl:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                <BookOpen className="w-6 h-6 mr-3 text-purple-500" />
-                事件日志
-              </h2>
-              <div className="h-[500px] overflow-y-auto">
-                <EventLog />
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* 第三行：故事背景 */}
-        {currentStory && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-              <BookOpen className="w-6 h-6 mr-3 text-indigo-500" />
-              故事背景
-            </h2>
-            <div className="max-h-48 overflow-y-auto">
-              <p className="text-gray-700 leading-relaxed">{currentStory}</p>
+        {/* 底部信息区域 - 可折叠 */}
+        <div className="mt-4">
+          <details className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <summary className="p-4 cursor-pointer text-sm font-semibold text-gray-800 hover:bg-gray-50 rounded-xl transition-colors">
+              📖 详细信息 (事件日志 & 故事背景)
+            </summary>
+            <div className="p-4 pt-0">
+              <div className="grid grid-cols-2 gap-6">
+                {/* 事件日志 */}
+                <div>
+                  <h3 className="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                    <BookOpen className="w-4 h-4 mr-2 text-purple-500" />
+                    事件日志
+                  </h3>
+                  <div className="h-48 overflow-y-auto">
+                    <EventLog />
+                  </div>
+                </div>
+
+                {/* 故事背景 */}
+                {currentStory && (
+                  <div>
+                    <h3 className="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                      <BookOpen className="w-4 h-4 mr-2 text-indigo-500" />
+                      故事背景
+                    </h3>
+                    <div className="h-48 overflow-y-auto">
+                      <p className="text-gray-700 text-sm leading-relaxed">{currentStory}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          </details>
+        </div>
       </div>
     </div>
   )
