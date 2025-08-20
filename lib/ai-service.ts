@@ -6,6 +6,21 @@ const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-8d09b60d4e0245e6b85
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
 export class AIService {
+  // 清理AI响应中的markdown代码块标记
+  private static cleanAIResponse(response: string): string {
+    let cleanedResponse = response.trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.substring(7);
+    }
+    if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.substring(3);
+    }
+    if (cleanedResponse.endsWith('```')) {
+      cleanedResponse = cleanedResponse.substring(0, cleanedResponse.length - 3);
+    }
+    return cleanedResponse.trim();
+  }
+
   private static async callDeepSeekAPI(messages: any[]) {
     try {
       const response = await axios.post(
@@ -253,7 +268,8 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 日常生活'}
 
     try {
       const response = await this.callDeepSeekAPI(messages);
-      const petData = JSON.parse(response);
+      const cleanedResponse = this.cleanAIResponse(response);
+      const petData = JSON.parse(cleanedResponse);
       
       // 识别宠物类型和特殊需求
       const { petType, specialNeeds } = this.identifyPetType(
@@ -365,7 +381,8 @@ ${genre ? `风格/题材: ${genre}` : '风格/题材: 日常生活'}
 
     try {
       const response = await this.callDeepSeekAPI(messages);
-      const tasksData = JSON.parse(response);
+      const cleanedResponse = this.cleanAIResponse(response);
+      const tasksData = JSON.parse(cleanedResponse);
       
       return tasksData.map((taskData: any, index: number) => ({
         id: Date.now().toString() + index,
@@ -641,7 +658,8 @@ ${conversationHistory}
       
       try {
         // 尝试解析JSON格式
-        const parsedResponse = JSON.parse(response);
+        const cleanedResponse = this.cleanAIResponse(response);
+        const parsedResponse = JSON.parse(cleanedResponse);
         aiResponse = {
           content: parsedResponse.content,
           action: parsedResponse.action,
@@ -823,23 +841,11 @@ ${conversationHistory}
       
       const response = await this.callDeepSeekAPI(messages);
       
-      // 清理AI返回的响应，移除可能的markdown标记
-      let cleanResponse = response.trim();
-      if (cleanResponse.startsWith('```json')) {
-        cleanResponse = cleanResponse.substring(7);
-      }
-      if (cleanResponse.startsWith('```')) {
-        cleanResponse = cleanResponse.substring(3);
-      }
-      if (cleanResponse.endsWith('```')) {
-        cleanResponse = cleanResponse.substring(0, cleanResponse.length - 3);
-      }
-      cleanResponse = cleanResponse.trim();
-      
       console.log('AI返回的原始响应:', response);
-      console.log('清理后的响应:', cleanResponse);
+      const cleanedResponse = this.cleanAIResponse(response);
+      console.log('清理后的响应:', cleanedResponse);
       
-      const analysis = JSON.parse(cleanResponse);
+      const analysis = JSON.parse(cleanedResponse);
       
       return {
         actions: analysis.actions || [],
@@ -1229,7 +1235,8 @@ ${conversationHistory}
 
     try {
       const response = await this.callDeepSeekAPI(messages);
-      const taskData = JSON.parse(response);
+      const cleanedResponse = this.cleanAIResponse(response);
+      const taskData = JSON.parse(cleanedResponse);
       
       return {
         id: Date.now().toString() + '_special',
