@@ -94,21 +94,21 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       {/* 顶部导航栏 */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-3">
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <h1 className="text-xl font-bold text-gray-800">AI宠物冒险</h1>
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-8">
+              <h1 className="text-2xl font-bold text-gray-800">AI宠物冒险</h1>
+              <div className="flex items-center space-x-3">
                 {gameState.pets.map((pet) => (
                   <button
                     key={pet.id}
                     onClick={() => handleSwitchPet(pet.id)}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                       pet.id === gameState.activePetId
-                        ? 'bg-blue-100 text-blue-700'
+                        ? 'bg-blue-100 text-blue-700 shadow-sm'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
@@ -117,20 +117,20 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
                 ))}
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <button
                 onClick={handleResetDailyTasks}
-                className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
-                <span className="text-sm">重置任务</span>
+                <span className="text-sm font-medium">重置任务</span>
               </button>
               <button
                 onClick={handleDeleteGame}
-                className="flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
-                <span className="text-sm">删除游戏</span>
+                <span className="text-sm font-medium">删除游戏</span>
               </button>
             </div>
           </div>
@@ -138,27 +138,28 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
       </div>
 
       {/* 主要内容区域 */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* 左侧：状态面板 */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-sm p-4 sticky top-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <Heart className="w-5 h-5 mr-2" />
-                状态
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* 第一行：状态面板和任务列表 */}
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8 mb-8">
+          {/* 左侧：状态面板 - 占用2列 */}
+          <div className="xl:col-span-2">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                <Heart className="w-6 h-6 mr-3 text-red-500" />
+                宠物状态
               </h2>
               <PetStatus pet={activePet} />
             </div>
           </div>
 
-          {/* 中间：任务列表 */}
-          <div className="lg:col-span-4">
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <List className="w-5 h-5 mr-2" />
+          {/* 右侧：任务列表 - 占用3列 */}
+          <div className="xl:col-span-3">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                <List className="w-6 h-6 mr-3 text-blue-500" />
                 任务列表
               </h2>
-              <div className="h-[500px] overflow-y-auto">
+              <div className="h-[600px] overflow-y-auto pr-2">
                 <TaskList
                   tasks={gameState.tasks}
                   onTaskComplete={handleTaskComplete}
@@ -166,12 +167,15 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
               </div>
             </div>
           </div>
+        </div>
 
-          {/* 右侧：对话互动 */}
-          <div className="lg:col-span-5">
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <MessageCircle className="w-5 h-5 mr-2" />
+        {/* 第二行：对话互动区域 */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
+          {/* 对话互动 - 占用2列 */}
+          <div className="xl:col-span-2">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                <MessageCircle className="w-6 h-6 mr-3 text-green-500" />
                 对话互动
               </h2>
               <div className="h-[500px]">
@@ -183,31 +187,33 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
               </div>
             </div>
           </div>
-        </div>
 
-        {/* 底部：事件日志和故事背景 */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 事件日志 */}
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <BookOpen className="w-5 h-5 mr-2" />
-              事件日志
-            </h2>
-            <div className="h-64 overflow-y-auto">
-              <EventLog />
-            </div>
-          </div>
-
-          {/* 故事背景 */}
-          {currentStory && (
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">故事背景</h2>
-              <div className="h-64 overflow-y-auto">
-                <p className="text-gray-700 text-sm leading-relaxed">{currentStory}</p>
+          {/* 右侧：事件日志 - 占用1列 */}
+          <div className="xl:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                <BookOpen className="w-6 h-6 mr-3 text-purple-500" />
+                事件日志
+              </h2>
+              <div className="h-[500px] overflow-y-auto">
+                <EventLog />
               </div>
             </div>
-          )}
+          </div>
         </div>
+
+        {/* 第三行：故事背景 */}
+        {currentStory && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+              <BookOpen className="w-6 h-6 mr-3 text-indigo-500" />
+              故事背景
+            </h2>
+            <div className="max-h-48 overflow-y-auto">
+              <p className="text-gray-700 leading-relaxed">{currentStory}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

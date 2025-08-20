@@ -102,146 +102,145 @@ export default function PetStatus({ pet }: PetStatusProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* 宠物基本信息 - 紧凑布局 */}
-      <div className="text-center bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4">
-        <div className="flex items-center justify-center space-x-3 mb-3">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-            <span className="text-2xl text-white font-bold">
+    <div className="space-y-6">
+      {/* 宠物基本信息 - 优化布局 */}
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6">
+        <div className="flex items-center space-x-4 mb-4">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
+            <span className="text-3xl text-white font-bold">
               {pet.name.charAt(0)}
             </span>
           </div>
-          <div className="text-left">
-            <h3 className="text-xl font-bold text-gray-800">{pet.name}</h3>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
+          <div className="flex-1">
+            <h3 className="text-2xl font-bold text-gray-800 mb-1">{pet.name}</h3>
+            <div className="flex items-center space-x-3 text-sm text-gray-600 mb-2">
               {getPetTypeIcon(pet.petType)}
               <span>{getPetTypeLabel(pet.petType)}</span>
               <span>•</span>
+              <Crown className="w-4 h-4 text-yellow-500" />
               <span>等级 {pet.level}</span>
             </div>
+            <div className="flex items-center space-x-2">
+              <User className="w-4 h-4 text-gray-500" />
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPersonalityTypeColor(pet.personalityType)}`}>
+                {getPersonalityTypeLabel(pet.personalityType)}
+              </span>
+            </div>
           </div>
-        </div>
-        
-        {/* 性格类型 */}
-        <div className="flex items-center justify-center space-x-2">
-          <User className="w-4 h-4 text-gray-500" />
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPersonalityTypeColor(pet.personalityType)}`}>
-            {getPersonalityTypeLabel(pet.personalityType)}
-          </span>
         </div>
       </div>
 
-      {/* 状态数值 - 紧凑布局 */}
-      <div className="bg-white rounded-lg p-4 border">
-        <h4 className="font-medium text-gray-800 mb-3 text-center">📊 状态面板</h4>
+      {/* 状态数值 - 优化布局 */}
+      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+        <h4 className="font-semibold text-gray-800 mb-4 text-center text-lg">📊 状态面板</h4>
         
         {/* 经验值 */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-1">
-              <Star className="w-4 h-4 text-yellow-500" />
-              <span className="text-xs font-medium text-gray-700">经验值</span>
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Star className="w-5 h-5 text-yellow-500" />
+              <span className="text-sm font-medium text-gray-700">经验值</span>
             </div>
-            <span className="text-xs text-gray-600">{pet.experience} / {pet.level * 100}</span>
+            <span className="text-sm text-gray-600">{pet.experience} / {pet.level * 100}</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5">
+          <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-yellow-500 h-1.5 rounded-full transition-all duration-300"
+              className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${(pet.experience % 100) / 100 * 100}%` }}
             ></div>
           </div>
         </div>
 
         {/* 健康值 */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-1">
-              <Heart className="w-4 h-4 text-red-500" />
-              <span className="text-xs font-medium text-gray-700">健康</span>
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Heart className="w-5 h-5 text-red-500" />
+              <span className="text-sm font-medium text-gray-700">健康</span>
             </div>
-            <span className={`text-xs font-medium ${getStatusColor(pet.health)}`}>
+            <span className={`text-sm font-medium ${getStatusColor(pet.health)}`}>
               {Math.round(pet.health)}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5">
+          <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className={`${getStatusBarColor(pet.health)} h-1.5 rounded-full transition-all duration-300`}
+              className={`${getStatusBarColor(pet.health)} h-2 rounded-full transition-all duration-300`}
               style={{ width: `${pet.health}%` }}
             ></div>
           </div>
         </div>
 
         {/* 快乐度 */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-1">
-              <Heart className="w-4 h-4 text-pink-500" />
-              <span className="text-xs font-medium text-gray-700">心情</span>
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Heart className="w-5 h-5 text-pink-500" />
+              <span className="text-sm font-medium text-gray-700">心情</span>
             </div>
-            <span className={`text-xs font-medium ${getStatusColor(pet.mood)}`}>
+            <span className={`text-sm font-medium ${getStatusColor(pet.mood)}`}>
               {Math.round(pet.mood)}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5">
+          <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className={`${getStatusBarColor(pet.mood)} h-1.5 rounded-full transition-all duration-300`}
+              className={`${getStatusBarColor(pet.mood)} h-2 rounded-full transition-all duration-300`}
               style={{ width: `${pet.mood}%` }}
             ></div>
           </div>
         </div>
 
         {/* 能量 */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-1">
-              <Zap className="w-4 h-4 text-yellow-500" />
-              <span className="text-xs font-medium text-gray-700">能量</span>
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Zap className="w-5 h-5 text-yellow-500" />
+              <span className="text-sm font-medium text-gray-700">能量</span>
             </div>
-            <span className={`text-xs font-medium ${getStatusColor(pet.energy)}`}>
+            <span className={`text-sm font-medium ${getStatusColor(pet.energy)}`}>
               {Math.round(pet.energy)}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5">
+          <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className={`${getStatusBarColor(pet.energy)} h-1.5 rounded-full transition-all duration-300`}
+              className={`${getStatusBarColor(pet.energy)} h-2 rounded-full transition-all duration-300`}
               style={{ width: `${pet.energy}%` }}
             ></div>
           </div>
         </div>
 
         {/* 突变值 */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-1">
-              <Coffee className="w-4 h-4 text-purple-500" />
-              <span className="text-xs font-medium text-gray-700">突变值</span>
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Coffee className="w-5 h-5 text-purple-500" />
+              <span className="text-sm font-medium text-gray-700">突变值</span>
             </div>
-            <span className={`text-xs font-medium ${getStatusColor(pet.mutation)}`}>
+            <span className={`text-sm font-medium ${getStatusColor(pet.mutation)}`}>
               {Math.round(pet.mutation)}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5">
+          <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className={`${getStatusBarColor(pet.mutation)} h-1.5 rounded-full transition-all duration-300`}
+              className={`${getStatusBarColor(pet.mutation)} h-2 rounded-full transition-all duration-300`}
               style={{ width: `${pet.mutation}%` }}
             ></div>
           </div>
         </div>
       </div>
 
-      {/* 特殊需求和特征 - 紧凑布局 */}
-      <div className="space-y-3">
+      {/* 特殊需求和特征 - 优化布局 */}
+      <div className="space-y-4">
         {/* 特殊需求 */}
-        <div className="bg-blue-50 rounded-lg p-3">
-          <h4 className="font-medium text-gray-800 mb-2 flex items-center text-sm">
-            <Settings className="w-4 h-4 mr-1" />
+        <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+          <h4 className="font-semibold text-gray-800 mb-3 flex items-center text-sm">
+            <Settings className="w-4 h-4 mr-2 text-blue-500" />
             特殊需求
           </h4>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-2">
             {pet.specialNeeds.map((need, index) => (
               <span
                 key={index}
-                className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full font-medium"
               >
                 {need}
               </span>
@@ -250,13 +249,13 @@ export default function PetStatus({ pet }: PetStatusProps) {
         </div>
 
         {/* 性格特征 */}
-        <div className="bg-gray-50 rounded-lg p-3">
-          <h4 className="font-medium text-gray-800 mb-2 text-sm">🎭 性格特征</h4>
-          <div className="flex flex-wrap gap-1">
+        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+          <h4 className="font-semibold text-gray-800 mb-3 text-sm">🎭 性格特征</h4>
+          <div className="flex flex-wrap gap-2">
             {pet.characteristics.map((char, index) => (
               <span
                 key={index}
-                className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full"
+                className="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full font-medium"
               >
                 {char}
               </span>
@@ -266,13 +265,13 @@ export default function PetStatus({ pet }: PetStatusProps) {
 
         {/* 突变标签 */}
         {pet.mutations && pet.mutations.length > 0 && (
-          <div className="bg-purple-50 rounded-lg p-3">
-            <p className="text-xs text-purple-600 mb-2 font-medium">🧬 突变特性</p>
-            <div className="flex flex-wrap gap-1">
+          <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+            <p className="text-sm text-purple-600 mb-3 font-semibold">🧬 突变特性</p>
+            <div className="flex flex-wrap gap-2">
               {pet.mutations.map((mutation, index) => (
                 <span 
                   key={index}
-                  className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full"
+                  className="px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-full font-medium"
                 >
                   {mutation}
                 </span>
@@ -284,20 +283,20 @@ export default function PetStatus({ pet }: PetStatusProps) {
 
       {/* 时间和背景信息 - 可折叠 */}
       <div className="space-y-2">
-        <details className="bg-gray-50 rounded-lg">
-          <summary className="p-3 cursor-pointer text-sm font-medium text-gray-800 hover:bg-gray-100 rounded-lg">
+        <details className="bg-gray-50 rounded-xl border border-gray-100">
+          <summary className="p-4 cursor-pointer text-sm font-semibold text-gray-800 hover:bg-gray-100 rounded-xl transition-colors">
             📖 详细信息
           </summary>
-          <div className="p-3 pt-0 space-y-3">
+          <div className="p-4 pt-0 space-y-4">
             {/* 创建时间和最后互动 */}
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="text-center">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="text-center bg-white rounded-lg p-3 border border-gray-100">
                 <p className="text-gray-600 mb-1">创建时间</p>
                 <p className="font-medium text-gray-800">
                   {new Date(pet.createdAt).toLocaleDateString('zh-CN')}
                 </p>
               </div>
-              <div className="text-center">
+              <div className="text-center bg-white rounded-lg p-3 border border-gray-100">
                 <p className="text-gray-600 mb-1">最后互动</p>
                 <p className="font-medium text-gray-800">
                   {new Date(pet.lastInteraction).toLocaleString('zh-CN')}
@@ -306,15 +305,15 @@ export default function PetStatus({ pet }: PetStatusProps) {
             </div>
 
             {/* 背景故事 */}
-            <div>
-              <h4 className="font-medium text-gray-800 mb-2 text-sm">背景故事</h4>
-              <p className="text-gray-700 text-xs leading-relaxed">{pet.background}</p>
+            <div className="bg-white rounded-lg p-3 border border-gray-100">
+              <h4 className="font-semibold text-gray-800 mb-2 text-sm">背景故事</h4>
+              <p className="text-gray-700 text-sm leading-relaxed">{pet.background}</p>
             </div>
 
             {/* 世界设定 */}
-            <div>
-              <h4 className="font-medium text-gray-800 mb-2 text-sm">🌍 世界设定</h4>
-              <p className="text-gray-700 text-xs leading-relaxed">{pet.worldSetting}</p>
+            <div className="bg-white rounded-lg p-3 border border-gray-100">
+              <h4 className="font-semibold text-gray-800 mb-2 text-sm">🌍 世界设定</h4>
+              <p className="text-gray-700 text-sm leading-relaxed">{pet.worldSetting}</p>
             </div>
           </div>
         </details>
