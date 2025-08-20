@@ -126,6 +126,7 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
     // 模拟物理任务完成
     setTimeout(() => {
       handleTaskComplete(task.id, { 
+        completed: true,
         action: task.physicalTask?.action,
         count: task.physicalTask?.count 
       });
@@ -150,7 +151,7 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
     );
 
     if (hasRequiredKeywords) {
-      handleTaskComplete(task.id, { conversation: conversationInput });
+      handleTaskComplete(task.id, { message: conversationInput });
       setConversationInput('');
       setActiveTaskId(null);
     } else {
@@ -168,10 +169,18 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
   };
 
   const handleTaskComplete = (taskId: string, completionData?: any) => {
-    GameService.completeTask(taskId, completionData);
-    onTaskComplete(taskId, completionData);
-    setActiveTaskId(null);
-    setConversationInput('');
+    console.log('TaskList: 调用handleTaskComplete', taskId, completionData);
+    const result = GameService.completeTask(taskId, completionData);
+    console.log('TaskList: completeTask返回结果', result);
+    
+    if (result.success) {
+      onTaskComplete(taskId, completionData);
+      setActiveTaskId(null);
+      setConversationInput('');
+    } else {
+      // 显示错误消息
+      alert(result.message);
+    }
   };
 
   const toggleTaskExpansion = (taskId: string) => {
@@ -198,7 +207,7 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
             <span>计时完成！</span>
           </div>
           <button
-            onClick={() => handleTaskComplete(task.id, { duration: task.timerTask?.duration || 0 })}
+            onClick={() => handleTaskComplete(task.id, { timerCompleted: true })}
             className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 text-sm"
           >
             <CheckCircle className="w-4 h-4" />

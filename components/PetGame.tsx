@@ -21,18 +21,14 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
 
   // 每次gameState变化时，强制重新获取数据
   useEffect(() => {
-    console.log('PetGame: gameState变化，重新获取数据', gameState);
     const newCurrentStory = GameService.getCurrentStory()
     const newActivePet = GameService.getActivePet()
-    console.log('PetGame: 获取到的新数据', { newCurrentStory, newActivePet });
     setCurrentStory(newCurrentStory)
     setActivePet(newActivePet)
   }, [gameState])
 
   const handleTaskComplete = (taskId: string, completionData?: any) => {
-    console.log('PetGame: handleTaskComplete被调用', taskId);
     onGameStateUpdate()
-    console.log('PetGame: onGameStateUpdate已调用');
   }
 
   const handleResetDailyTasks = () => {
@@ -171,7 +167,7 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
         </div>
 
         {/* 第二行：任务列表(2列) + 事件日志(1列) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* 任务列表 */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 h-full flex flex-col">
@@ -200,6 +196,72 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
               </div>
             </div>
           </div>
+        </div>
+
+        {/* 第三行：详细信息 - 可折叠 */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <details className="group">
+            <summary className="p-5 cursor-pointer text-sm font-semibold text-gray-800 hover:bg-gray-50 rounded-xl transition-colors flex items-center justify-between">
+              <div className="flex items-center">
+                <BookOpen className="w-5 h-5 mr-2 text-indigo-500" />
+                详细信息 (世界设定 & 故事背景)
+              </div>
+              <div className="text-gray-400 group-open:rotate-180 transition-transform">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </summary>
+            <div className="p-5 pt-0 border-t border-gray-100">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 左侧：时间和背景信息 */}
+                <div className="space-y-4">
+                  {/* 创建时间和最后互动 */}
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="text-center bg-gray-50 rounded p-2 border border-gray-100">
+                      <p className="text-gray-600 mb-1">创建时间</p>
+                      <p className="font-medium text-gray-800">
+                        {activePet.createdAt ? new Date(activePet.createdAt).toLocaleDateString('zh-CN') : '未知'}
+                      </p>
+                    </div>
+                    <div className="text-center bg-gray-50 rounded p-2 border border-gray-100">
+                      <p className="text-gray-600 mb-1">最后互动</p>
+                      <p className="font-medium text-gray-800">
+                        {activePet.lastInteraction ? new Date(activePet.lastInteraction).toLocaleString('zh-CN') : '未知'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 背景故事 */}
+                  {activePet.background && (
+                    <div className="bg-gray-50 rounded p-3 border border-gray-100">
+                      <h4 className="font-semibold text-gray-800 mb-2 text-sm">背景故事</h4>
+                      <p className="text-gray-700 text-sm leading-relaxed">{activePet.background}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* 右侧：世界设定和当前故事 */}
+                <div className="space-y-4">
+                  {/* 世界设定 */}
+                  {activePet.worldSetting && (
+                    <div className="bg-gray-50 rounded p-3 border border-gray-100">
+                      <h4 className="font-semibold text-gray-800 mb-2 text-sm">🌍 世界设定</h4>
+                      <p className="text-gray-700 text-sm leading-relaxed">{activePet.worldSetting}</p>
+                    </div>
+                  )}
+
+                  {/* 当前故事 */}
+                  {currentStory && (
+                    <div className="bg-gray-50 rounded p-3 border border-gray-100">
+                      <h4 className="font-semibold text-gray-800 mb-2 text-sm">📖 当前故事</h4>
+                      <p className="text-gray-700 text-sm leading-relaxed">{currentStory}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </details>
         </div>
       </div>
     </div>

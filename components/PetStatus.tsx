@@ -8,7 +8,6 @@ interface PetStatusProps {
 }
 
 export default function PetStatus({ pet }: PetStatusProps) {
-  console.log('PetStatus: 接收到pet数据', pet);
   const getStatusColor = (value: number) => {
     if (value >= 80) return 'text-green-600'
     if (value >= 60) return 'text-yellow-600'

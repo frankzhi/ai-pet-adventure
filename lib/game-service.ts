@@ -151,12 +151,10 @@ export class GameService {
   }
 
   static getActivePet(): Pet | null {
-    console.log("GameService: getActivePet被调用");
     const gameState = this.loadGameState();
     if (!gameState) return null;
     
     const activePet = gameState.pets.find(pet => pet.id === gameState.activePetId) || null;
-    console.log("GameService: getActivePet返回", activePet);
     return activePet;
   }
 
@@ -599,6 +597,8 @@ export class GameService {
         } else if (timerProgress && timerProgress.isComplete) {
           failureReason = '计时任务已完成，但超出完成窗口时间';
           hint = '请在计时结束后10分钟内点击完成';
+        } else if (completionData && completionData.timerCompleted) {
+          canComplete = true;
         } else {
           failureReason = '计时任务时间不足';
           hint = `请等待${task.timerTask?.duration || 0}秒完成`;
@@ -624,15 +624,6 @@ export class GameService {
     const oldMutation = activePet.mutation;
     const oldExperience = activePet.experience;
 
-    // 应用奖励
-    console.log('任务完成前状态:', {
-      experience: activePet.experience,
-      mood: activePet.mood,
-      health: activePet.health,
-      energy: activePet.energy,
-      mutation: activePet.mutation
-    });
-    
     // 安全地应用奖励，防止NaN
     const safeAdd = (current: number, change: number, min: number = 0, max: number = 100): number => {
       if (isNaN(current) || isNaN(change)) return Math.max(min, Math.min(max, 50)); // 默认值
@@ -640,26 +631,14 @@ export class GameService {
       return Math.max(min, Math.min(max, result));
     };
 
-    console.log("应用经验值奖励:", task.reward.experience);
     activePet.experience = safeAdd(activePet.experience, task.reward.experience, 0, 999999);
-    console.log("应用心情值奖励:", task.reward.mood);
     activePet.mood = safeAdd(activePet.mood, task.reward.mood);
-    console.log("应用健康值奖励:", task.reward.health);
     activePet.health = safeAdd(activePet.health, task.reward.health);
-    console.log("应用能量值奖励:", task.reward.energy);
     activePet.energy = safeAdd(activePet.energy, task.reward.energy);
     
     if (task.reward.mutation !== undefined) {
       activePet.mutation = safeAdd(activePet.mutation, task.reward.mutation);
     }
-    
-    console.log('任务完成后状态:', {
-      experience: activePet.experience,
-      mood: activePet.mood,
-      health: activePet.health,
-      energy: activePet.energy,
-      mutation: activePet.mutation
-    });
 
     // 记录状态变化到活动日志
     const statusChanges = [];
@@ -701,15 +680,6 @@ export class GameService {
     }
 
     // 立即保存状态
-    // 验证状态是否正确保存 - 直接使用gameState.pets数组中的对象
-    console.log("保存后立即获取的宠物状态:", {
-      experience: gameState.pets[activePetIndex].experience,
-      mood: gameState.pets[activePetIndex].mood,
-      health: gameState.pets[activePetIndex].health,
-      energy: gameState.pets[activePetIndex].energy,
-      mutation: gameState.pets[activePetIndex].mutation
-    });
-    console.log("GameService: 保存状态后的activePet", activePet);
     this.saveGameState(gameState);
     
     return { 
