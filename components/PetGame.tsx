@@ -170,30 +170,35 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
           </div>
         </div>
 
-        {/* 第二行：任务列表 - 全宽 */}
-        <div className="mb-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <List className="w-5 h-5 mr-2 text-blue-500" />
-              任务列表
-            </h2>
-            <div className="h-80 overflow-y-auto">
-              <TaskList
-                tasks={gameState.tasks}
-                onTaskComplete={handleTaskComplete}
-              />
+        {/* 第二行：任务列表(2列) + 事件日志(1列) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 任务列表 */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 h-full flex flex-col">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <List className="w-5 h-5 mr-2 text-blue-500" />
+                任务列表
+              </h2>
+              <div className="flex-1 min-h-[280px] max-h-[60vh] overflow-y-auto">
+                <TaskList
+                  tasks={gameState.tasks}
+                  onTaskComplete={handleTaskComplete}
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* 第三行：事件日志 - 简化，移除重复信息 */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <BookOpen className="w-5 h-5 mr-2 text-purple-500" />
-            事件日志
-          </h2>
-          <div className="h-48 overflow-y-auto">
-            <EventLog />
+          {/* 事件日志 */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 h-full flex flex-col">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <BookOpen className="w-5 h-5 mr-2 text-purple-500" />
+                事件日志
+              </h2>
+              <div className="flex-1 min-h-[280px] max-h-[60vh] overflow-y-auto">
+                <EventLog />
+              </div>
+            </div>
           </div>
         </div>
       </div>
