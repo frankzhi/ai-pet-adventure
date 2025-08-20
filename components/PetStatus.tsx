@@ -280,44 +280,6 @@ export default function PetStatus({ pet }: PetStatusProps) {
           </div>
         )}
       </div>
-
-      {/* 时间和背景信息 - 可折叠 */}
-      <div className="space-y-2">
-        <details className="bg-gray-50 rounded-lg border border-gray-100">
-          <summary className="p-3 cursor-pointer text-xs font-semibold text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
-            📖 详细信息
-          </summary>
-          <div className="p-3 pt-0 space-y-3">
-            {/* 创建时间和最后互动 */}
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="text-center bg-white rounded p-2 border border-gray-100">
-                <p className="text-gray-600 mb-1">创建时间</p>
-                <p className="font-medium text-gray-800">
-                  {new Date(pet.createdAt).toLocaleDateString('zh-CN')}
-                </p>
-              </div>
-              <div className="text-center bg-white rounded p-2 border border-gray-100">
-                <p className="text-gray-600 mb-1">最后互动</p>
-                <p className="font-medium text-gray-800">
-                  {new Date(pet.lastInteraction).toLocaleString('zh-CN')}
-                </p>
-              </div>
-            </div>
-
-            {/* 背景故事 */}
-            <div className="bg-white rounded p-2 border border-gray-100">
-              <h4 className="font-semibold text-gray-800 mb-1 text-xs">背景故事</h4>
-              <p className="text-gray-700 text-xs leading-relaxed">{pet.background}</p>
-            </div>
-
-            {/* 世界设定 */}
-            <div className="bg-white rounded p-2 border border-gray-100">
-              <h4 className="font-semibold text-gray-800 mb-1 text-xs">🌍 世界设定</h4>
-              <p className="text-gray-700 text-xs leading-relaxed">{pet.worldSetting}</p>
-            </div>
-          </div>
-        </details>
-      </div>
     </div>
   )
 } 

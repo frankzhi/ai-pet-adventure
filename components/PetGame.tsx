@@ -137,9 +137,9 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
         </div>
       </div>
 
-      {/* 主要内容区域 - 横竖结合布局 */}
+      {/* 主要内容区域 - 重新设计布局 */}
       <div className="max-w-7xl mx-auto px-6 py-4">
-        {/* 第一行：状态面板和任务列表 - 横向排列 */}
+        {/* 第一行：状态面板和对话互动 - 对话互动更重要 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* 左侧：状态面板 */}
           <div className="lg:col-span-1">
@@ -152,82 +152,49 @@ export default function PetGame({ gameState, onGameStateUpdate, onDeleteGame }: 
             </div>
           </div>
 
-          {/* 右侧：任务列表 - 占用2列 */}
+          {/* 右侧：对话互动 - 占用2列，更重要 */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 h-full">
               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <List className="w-5 h-5 mr-2 text-blue-500" />
-                任务列表
+                <MessageCircle className="w-5 h-5 mr-2 text-green-500" />
+                对话互动
               </h2>
-              <div className="h-full overflow-y-auto">
-                <TaskList
-                  tasks={gameState.tasks}
-                  onTaskComplete={handleTaskComplete}
+              <div className="h-full">
+                <ChatInterface
+                  pet={activePet}
+                  conversations={gameState.conversations}
+                  onGameStateUpdate={onGameStateUpdate}
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* 第二行：对话互动 - 全宽 */}
+        {/* 第二行：任务列表 - 全宽 */}
         <div className="mb-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <MessageCircle className="w-5 h-5 mr-2 text-green-500" />
-              对话互动
+              <List className="w-5 h-5 mr-2 text-blue-500" />
+              任务列表
             </h2>
-            <div className="h-96">
-              <ChatInterface
-                pet={activePet}
-                conversations={gameState.conversations}
-                onGameStateUpdate={onGameStateUpdate}
+            <div className="h-80 overflow-y-auto">
+              <TaskList
+                tasks={gameState.tasks}
+                onTaskComplete={handleTaskComplete}
               />
             </div>
           </div>
         </div>
 
-        {/* 第三行：详细信息 - 可折叠 */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-          <details className="group">
-            <summary className="p-5 cursor-pointer text-sm font-semibold text-gray-800 hover:bg-gray-50 rounded-xl transition-colors flex items-center justify-between">
-              <div className="flex items-center">
-                <BookOpen className="w-5 h-5 mr-2 text-purple-500" />
-                详细信息 (事件日志 & 故事背景)
-              </div>
-              <div className="text-gray-400 group-open:rotate-180 transition-transform">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </summary>
-            <div className="p-5 pt-0 border-t border-gray-100">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* 事件日志 */}
-                <div>
-                  <h3 className="text-md font-semibold text-gray-800 mb-3 flex items-center">
-                    <BookOpen className="w-4 h-4 mr-2 text-purple-500" />
-                    事件日志
-                  </h3>
-                  <div className="h-64 overflow-y-auto">
-                    <EventLog />
-                  </div>
-                </div>
-
-                {/* 故事背景 */}
-                {currentStory && (
-                  <div>
-                    <h3 className="text-md font-semibold text-gray-800 mb-3 flex items-center">
-                      <BookOpen className="w-4 h-4 mr-2 text-indigo-500" />
-                      故事背景
-                    </h3>
-                    <div className="h-64 overflow-y-auto">
-                      <p className="text-gray-700 text-sm leading-relaxed">{currentStory}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </details>
+        {/* 第三行：事件日志 - 简化，移除重复信息 */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+            <BookOpen className="w-5 h-5 mr-2 text-purple-500" />
+            事件日志
+          </h2>
+          <div className="h-48 overflow-y-auto">
+            <EventLog />
+          </div>
         </div>
       </div>
     </div>
