@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Task } from '../types'
 import { GameService } from '../lib/game-service'
-import { CheckCircle, Circle, Star, Clock, Gift, MessageCircle, Timer, Activity, AlertCircle, RefreshCw } from 'lucide-react'
+import { CheckCircle, Circle, Star, Clock, Gift, MessageCircle, Timer, Activity, AlertCircle, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react'
 
 interface TaskListProps {
   tasks: Task[]
@@ -17,6 +17,7 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
   const [taskAttempts, setTaskAttempts] = useState<{[key: string]: number}>({})
   const [taskHints, setTaskHints] = useState<{[key: string]: string}>({})
   const [showFailureMessage, setShowFailureMessage] = useState<{[key: string]: boolean}>({})
+  const [expandedTasks, setExpandedTasks] = useState<{[key: string]: boolean}>({})
 
   // 更新计时器状态
   useEffect(() => {
@@ -99,102 +100,88 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
   }
 
   const handleTaskStart = (taskId: string) => {
-    try {
-      console.log('TaskList: 开始任务', taskId);
-      const result = GameService.startTask(taskId);
-      console.log('TaskList: 任务开始结果', result);
-      
-      if (result.success) {
-        // 强制刷新页面状态
-        window.location.reload();
-      } else {
-        alert(result.message);
-      }
-    } catch (error) {
-      console.error('开始任务失败:', error);
-    }
-  }
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
 
-  const handleTaskComplete = (taskId: string, completionData?: any) => {
-    try {
-      console.log('TaskList: 开始完成任务', taskId, completionData);
-      const result = GameService.completeTask(taskId, completionData);
-      console.log('TaskList: 任务完成结果', result);
-      
-      if (result.success) {
-        // 立即更新游戏状态
-        console.log('TaskList: 调用onTaskComplete回调');
-        onTaskComplete(taskId, completionData);
-        setActiveTaskId(null);
-        setConversationInput('');
-        // 清除失败状态
-        setTaskAttempts(prev => ({ ...prev, [taskId]: 0 }));
-        setTaskHints(prev => ({ ...prev, [taskId]: '' }));
-        setShowFailureMessage(prev => ({ ...prev, [taskId]: false }));
-        
-        // 显示成功消息，包含详细的奖励信息
-        const task = tasks.find(t => t.id === taskId);
-        let rewardMessage = `任务完成！获得 ${task?.reward.experience || 0} 经验值`;
-        if (task?.reward.mood) rewardMessage += `，心情 +${task.reward.mood}`;
-        if (task?.reward.health) rewardMessage += `，健康 +${task.reward.health}`;
-        if (task?.reward.energy) rewardMessage += `，能量 ${task.reward.energy > 0 ? '+' : ''}${task.reward.energy}`;
-        if (task?.reward.mutation) rewardMessage += `，突变值 ${task.reward.mutation > 0 ? '+' : ''}${task.reward.mutation}`;
-        
-        alert(rewardMessage);
-      } else {
-        // 任务失败，显示错误信息
-        const attempts = (taskAttempts[taskId] || 0) + 1;
-        setTaskAttempts(prev => ({ ...prev, [taskId]: attempts }));
-        setTaskHints(prev => ({ ...prev, [taskId]: result.hint || '' }));
-        setShowFailureMessage(prev => ({ ...prev, [taskId]: true }));
-        
-        // 3秒后自动隐藏失败消息
-        setTimeout(() => {
-          setShowFailureMessage(prev => ({ ...prev, [taskId]: false }));
-        }, 3000);
-        
-        // 如果失败5次，显示正确答案
-        if (attempts >= 5) {
-          const task = tasks.find(t => t.id === taskId);
-          const requiredKeywords = task?.conversationTask?.requiredKeywords;
-          if (requiredKeywords && requiredKeywords.length > 0) {
-            setTaskHints(prev => ({ 
-              ...prev, 
-              [taskId]: `正确答案示例: "${requiredKeywords.join(' ')}"` 
-            }));
-          }
-        }
-      }
-    } catch (error) {
-      console.error('完成任务失败:', error);
+    switch (task.completionMethod) {
+      case 'physical':
+        startPhysicalTask(task);
+        break;
+      case 'timer':
+        startTimerTask(task);
+        break;
+      case 'conversation':
+        setActiveTaskId(taskId);
+        break;
+      default:
+        handleTaskComplete(taskId);
     }
-  }
+  };
 
   const startPhysicalTask = (task: Task) => {
+    if (!task.physicalTask) return;
+    
     setActiveTaskId(task.id);
-    // 这里可以添加实际的运动检测逻辑
-    // 目前只是模拟完成
+    
+    // 模拟物理任务完成
     setTimeout(() => {
-      handleTaskComplete(task.id, { completed: true });
+      handleTaskComplete(task.id, { 
+        action: task.physicalTask?.action,
+        count: task.physicalTask?.count 
+      });
     }, 2000);
-  }
+  };
 
   const startTimerTask = (task: Task) => {
     if (!task.timerTask) return;
     
     setActiveTaskId(task.id);
-    // 使用全局计时器管理
     GameService.startTimer(task.id, task.timerTask.duration);
-  }
+  };
 
   const handleConversationSubmit = (task: Task) => {
-    if (!conversationInput.trim()) return;
-    
-    handleTaskComplete(task.id, { message: conversationInput });
-  }
+    if (!task.conversationTask || !conversationInput.trim()) return;
+
+    const attempts = (taskAttempts[task.id] || 0) + 1;
+    setTaskAttempts(prev => ({ ...prev, [task.id]: attempts }));
+
+    const hasRequiredKeywords = task.conversationTask.requiredKeywords.some(keyword => 
+      conversationInput.toLowerCase().includes(keyword.toLowerCase())
+    );
+
+    if (hasRequiredKeywords) {
+      handleTaskComplete(task.id, { conversation: conversationInput });
+      setConversationInput('');
+      setActiveTaskId(null);
+    } else {
+      setShowFailureMessage(prev => ({ ...prev, [task.id]: true }));
+      setTaskHints(prev => ({ 
+        ...prev, 
+        [task.id]: `请包含关键词: ${task.conversationTask?.requiredKeywords.join(', ') || ''}` 
+      }));
+      
+      // 3秒后隐藏失败消息
+      setTimeout(() => {
+        setShowFailureMessage(prev => ({ ...prev, [task.id]: false }));
+      }, 3000);
+    }
+  };
+
+  const handleTaskComplete = (taskId: string, completionData?: any) => {
+    GameService.completeTask(taskId, completionData);
+    onTaskComplete(taskId, completionData);
+    setActiveTaskId(null);
+    setConversationInput('');
+  };
+
+  const toggleTaskExpansion = (taskId: string) => {
+    setExpandedTasks(prev => ({
+      ...prev,
+      [taskId]: !prev[taskId]
+    }));
+  };
 
   const renderTaskCompletion = (task: Task) => {
-    // 检查是否有活跃的计时器
     const timerState = timerStates[task.id];
     const hasActiveTimer = timerState && !timerState.isComplete;
     const hasCompletedTimer = timerState && timerState.isComplete;
@@ -206,13 +193,13 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
     if (task.completionMethod === 'timer' && hasCompletedTimer) {
       return (
         <div className="ml-4 flex flex-col space-y-2">
-          <div className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center space-x-2">
+          <div className="px-3 py-1.5 bg-green-600 text-white rounded-lg flex items-center space-x-2 text-sm">
             <CheckCircle className="w-4 h-4" />
             <span>计时完成！</span>
           </div>
           <button
             onClick={() => handleTaskComplete(task.id, { duration: task.timerTask?.duration || 0 })}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 text-sm"
           >
             <CheckCircle className="w-4 h-4" />
             <span>确认完成</span>
@@ -295,12 +282,12 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
                 value={conversationInput}
                 onChange={(e) => setConversationInput(e.target.value)}
                 placeholder="输入对话内容..."
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 onKeyPress={(e) => e.key === 'Enter' && handleConversationSubmit(task)}
               />
               <button
                 onClick={() => handleConversationSubmit(task)}
-                className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
               >
                 发送
               </button>
@@ -330,27 +317,27 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
   const activeTasks = tasks.filter(task => !task.isCompleted);
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-2">📋 任务列表</h3>
-        <p className="text-gray-600">
+    <div className="space-y-4">
+      <div className="mb-4">
+        <h3 className="text-lg font-bold text-gray-800 mb-1">📋 任务列表</h3>
+        <p className="text-gray-600 text-sm">
           完成 {completedTasks.length} / {tasks.length} 个任务
         </p>
       </div>
 
       {/* 进行中的任务 */}
       {activeTasks.length > 0 && (
-        <div className="mb-8">
-          <h4 className="text-lg font-medium text-gray-800 mb-4">🔄 进行中的任务</h4>
-          <div className="space-y-4">
-            {activeTasks.map((task) => (
-              <div
-                key={task.id}
-                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
+        <div className="space-y-3">
+          {activeTasks.map((task) => (
+            <div
+              key={task.id}
+              className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  {/* 任务头部信息 */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
                       {getTaskTypeIcon(task.type)}
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTaskTypeColor(task.type)}`}>
                         {getTaskTypeLabel(task.type)}
@@ -360,126 +347,108 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
                           {task.category}
                         </span>
                       )}
-                      {task.riskLevel && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600">
-                          {task.riskLevel === 'extreme' ? '极高风险' : 
-                           task.riskLevel === 'high' ? '高风险' : 
-                           task.riskLevel === 'medium' ? '中等风险' : '低风险'}
-                        </span>
-                      )}
                     </div>
-                    <h5 className="font-medium text-gray-800 mb-2">{task.title}</h5>
-                    <p className="text-gray-600 text-sm mb-3">{task.description}</p>
-                    
-                    {/* 任务过期状态 */}
-                    {task.isExpired && (
-                      <div className="mb-3 p-3 bg-red-50 rounded-lg">
-                        <p className="text-sm text-red-700">
+                    <button
+                      onClick={() => toggleTaskExpansion(task.id)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {expandedTasks[task.id] ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  
+                  {/* 任务标题和描述 */}
+                  <h5 className="font-medium text-gray-800 mb-1">{task.title}</h5>
+                  <p className="text-gray-600 text-sm mb-2 line-clamp-2">{task.description}</p>
+                  
+                  {/* 奖励信息 - 紧凑显示 */}
+                  <div className="flex items-center space-x-3 text-xs text-gray-600 mb-2">
+                    <div className="flex items-center space-x-1">
+                      <Star className="w-3 h-3 text-yellow-500" />
+                      <span>{task.reward.experience > 0 ? '+' : ''}{task.reward.experience}</span>
+                    </div>
+                    {task.reward.mood !== undefined && (
+                      <div className="flex items-center space-x-1">
+                        <span className="text-pink-500">❤️</span>
+                        <span>{task.reward.mood > 0 ? '+' : ''}{task.reward.mood}</span>
+                      </div>
+                    )}
+                    {task.reward.health !== undefined && (
+                      <div className="flex items-center space-x-1">
+                        <span className="text-red-500">💖</span>
+                        <span>{task.reward.health > 0 ? '+' : ''}{task.reward.health}</span>
+                      </div>
+                    )}
+                    {task.reward.energy !== undefined && (
+                      <div className="flex items-center space-x-1">
+                        <span className="text-blue-500">⚡</span>
+                        <span>{task.reward.energy > 0 ? '+' : ''}{task.reward.energy}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* 展开的详细信息 */}
+                  {expandedTasks[task.id] && (
+                    <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                      {/* 任务过期状态 */}
+                      {task.isExpired && (
+                        <div className="p-2 bg-red-50 rounded text-xs text-red-700">
                           <strong>⚠️ 任务已过期</strong>
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* 风险描述 */}
-                    {task.riskDescription && (
-                      <div className="mb-3 p-3 bg-orange-50 rounded-lg">
-                        <p className="text-sm text-orange-700">
-                          <strong>⚠️ 风险提示:</strong> {task.riskDescription}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* 任务详情 */}
-                    {task.physicalTask && (
-                      <div className="mb-3 p-3 bg-green-50 rounded-lg">
-                        <p className="text-sm text-green-700">
+                        </div>
+                      )}
+                      
+                      {/* 任务详情 */}
+                      {task.physicalTask && (
+                        <div className="p-2 bg-green-50 rounded text-xs text-green-700">
                           <strong>运动任务:</strong> {task.physicalTask.action}
                           {task.physicalTask.count && ` (${task.physicalTask.count}次)`}
                           {task.physicalTask.duration && ` (${task.physicalTask.duration}秒)`}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {task.conversationTask && (
-                      <div className="mb-3 p-3 bg-indigo-50 rounded-lg">
-                        <p className="text-sm text-indigo-700">
-                          <strong>对话要求:</strong> 需要包含关键词: {task.conversationTask.requiredKeywords.join(', ')}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {task.timerTask && (
-                      <div className="mb-3 p-3 bg-yellow-50 rounded-lg">
-                        <p className="text-sm text-yellow-700">
+                        </div>
+                      )}
+                      
+                      {task.conversationTask && (
+                        <div className="p-2 bg-indigo-50 rounded text-xs text-indigo-700">
+                          <strong>对话要求:</strong> {task.conversationTask.requiredKeywords.join(', ')}
+                        </div>
+                      )}
+                      
+                      {task.timerTask && (
+                        <div className="p-2 bg-yellow-50 rounded text-xs text-yellow-700">
                           <strong>定时任务:</strong> {task.timerTask.description} ({task.timerTask.duration}秒)
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* 奖励信息 */}
-                    <div className="flex items-center space-x-4 text-sm">
-                      <div className="flex items-center space-x-1">
-                        <Star className="w-4 h-4 text-yellow-500" />
-                        <span className="text-gray-600">{task.reward.experience > 0 ? '+' : ''}{task.reward.experience} 经验</span>
-                      </div>
-                      {task.reward.mood !== undefined && (
-                        <div className="flex items-center space-x-1">
-                          <span className="text-pink-500">❤️</span>
-                          <span className="text-gray-600">{task.reward.mood > 0 ? '+' : ''}{task.reward.mood} 心情</span>
-                        </div>
-                      )}
-                      {task.reward.health !== undefined && (
-                        <div className="flex items-center space-x-1">
-                          <span className="text-red-500">💖</span>
-                          <span className="text-gray-600">{task.reward.health > 0 ? '+' : ''}{task.reward.health} 健康</span>
-                        </div>
-                      )}
-                      {task.reward.energy !== undefined && (
-                        <div className="flex items-center space-x-1">
-                          <span className="text-blue-500">⚡</span>
-                          <span className="text-gray-600">{task.reward.energy > 0 ? '+' : ''}{task.reward.energy} 能量</span>
-                        </div>
-                      )}
-                      {task.reward.mutation !== undefined && (
-                        <div className="flex items-center space-x-1">
-                          <span className="text-purple-500">🧬</span>
-                          <span className="text-gray-600">{task.reward.mutation > 0 ? '+' : ''}{task.reward.mutation} 突变值</span>
                         </div>
                       )}
                     </div>
-                  </div>
-                  
-                  {renderTaskCompletion(task)}
+                  )}
                 </div>
+                
+                {renderTaskCompletion(task)}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* 已完成的任务 */}
+      {/* 已完成的任务 - 可折叠 */}
       {completedTasks.length > 0 && (
-        <div>
-          <h4 className="text-lg font-medium text-gray-800 mb-4">✅ 已完成的任务</h4>
-          <div className="space-y-3">
+        <details className="bg-gray-50 rounded-lg border border-gray-200">
+          <summary className="p-3 cursor-pointer text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            ✅ 已完成的任务 ({completedTasks.length})
+          </summary>
+          <div className="p-3 pt-0 space-y-2">
             {completedTasks.map((task) => (
               <div
                 key={task.id}
-                className="bg-gray-50 border border-gray-200 rounded-lg p-4 opacity-75 hover:opacity-100 transition-opacity cursor-pointer"
-                onClick={() => {
-                  // 展开显示任务详情
-                  const taskElement = document.getElementById(`task-${task.id}`);
-                  if (taskElement) {
-                    taskElement.classList.toggle('hidden');
-                  }
-                }}
+                className="bg-white border border-gray-200 rounded p-3 opacity-75 hover:opacity-100 transition-opacity"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
                     <div>
-                      <h5 className="font-medium text-gray-700 line-through">{task.title}</h5>
-                      <p className="text-gray-500 text-sm">
+                      <h5 className="font-medium text-gray-700 line-through text-sm">{task.title}</h5>
+                      <p className="text-gray-500 text-xs">
                         完成时间: {task.completedAt ? new Date(task.completedAt).toLocaleString('zh-CN') : '未知'}
                       </p>
                     </div>
@@ -488,59 +457,11 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
                     {getTaskTypeLabel(task.type)}
                   </span>
                 </div>
-                
-                {/* 任务详情（默认隐藏） */}
-                <div id={`task-${task.id}`} className="hidden mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-gray-600 text-sm mb-3">{task.description}</p>
-                  
-                  {/* 奖励信息 */}
-                  <div className="flex items-center space-x-4 text-sm">
-                    <div className="flex items-center space-x-1">
-                      <Star className="w-4 h-4 text-yellow-500" />
-                      <span className="text-gray-600">{task.reward.experience > 0 ? '+' : ''}{task.reward.experience} 经验</span>
-                    </div>
-                    {task.reward.mood !== undefined && (
-                      <div className="flex items-center space-x-1">
-                        <span className="text-pink-500">❤️</span>
-                        <span className="text-gray-600">{task.reward.mood > 0 ? '+' : ''}{task.reward.mood} 心情</span>
-                      </div>
-                    )}
-                    {task.reward.health !== undefined && (
-                      <div className="flex items-center space-x-1">
-                        <span className="text-red-500">💖</span>
-                        <span className="text-gray-600">{task.reward.health > 0 ? '+' : ''}{task.reward.health} 健康</span>
-                      </div>
-                    )}
-                    {task.reward.energy !== undefined && (
-                      <div className="flex items-center space-x-1">
-                        <span className="text-blue-500">⚡</span>
-                        <span className="text-gray-600">{task.reward.energy > 0 ? '+' : ''}{task.reward.energy} 能量</span>
-                      </div>
-                    )}
-                    {task.reward.mutation !== undefined && (
-                      <div className="flex items-center space-x-1">
-                        <span className="text-purple-500">🧬</span>
-                        <span className="text-gray-600">{task.reward.mutation > 0 ? '+' : ''}{task.reward.mutation} 突变值</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* 没有任务时的提示 */}
-      {tasks.length === 0 && (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-gray-400" />
-          </div>
-          <h4 className="text-lg font-medium text-gray-600 mb-2">暂无任务</h4>
-          <p className="text-gray-500">与你的宠物互动，新的任务将会出现！</p>
-        </div>
+        </details>
       )}
     </div>
-  );
+  )
 } 
