@@ -1046,7 +1046,9 @@ export class GameService {
 
       // 生成随机事件（每5分钟一次，频率提升）
       const lastEventTime = gameState.randomEvents.length > 0 
-        ? new Date(gameState.randomEvents[gameState.randomEvents.length - 1].timestamp)
+        ? (gameState.randomEvents[gameState.randomEvents.length - 1].timestamp instanceof Date 
+           ? gameState.randomEvents[gameState.randomEvents.length - 1].timestamp 
+           : new Date(gameState.randomEvents[gameState.randomEvents.length - 1].timestamp))
         : new Date(0);
       const minutesSinceLastEvent = (now.getTime() - lastEventTime.getTime()) / (1000 * 60);
       
@@ -1065,7 +1067,9 @@ export class GameService {
       }
 
       // 更新宠物活动
-      const lastActivityUpdate = new Date(pet.lastActivityUpdate);
+      const lastActivityUpdate = pet.lastActivityUpdate instanceof Date 
+        ? pet.lastActivityUpdate 
+        : new Date(pet.lastActivityUpdate);
       const hoursSinceActivityUpdate = (now.getTime() - lastActivityUpdate.getTime()) / (1000 * 60 * 60);
       
       if (hoursSinceActivityUpdate > 1) {
@@ -1093,7 +1097,9 @@ export class GameService {
     this.manageTaskExpiration();
     
     // 定期生成新任务（每10分钟检查一次）
-    const lastTaskGeneration = gameState.lastTaskGeneration || new Date(0);
+    const lastTaskGeneration = gameState.lastTaskGeneration instanceof Date 
+      ? gameState.lastTaskGeneration 
+      : (gameState.lastTaskGeneration ? new Date(gameState.lastTaskGeneration) : new Date(0));
     const minutesSinceLastTaskGen = (now.getTime() - lastTaskGeneration.getTime()) / (1000 * 60);
     
     if (minutesSinceLastTaskGen >= 10) {
@@ -1292,7 +1298,9 @@ export class GameService {
   private static async checkForMutation(pet: Pet, gameState: GameState): Promise<void> {
     // 检查是否已经今天检查过突变
     const now = new Date();
-    const lastCheck = new Date(pet.lastMutationCheck);
+    const lastCheck = pet.lastMutationCheck instanceof Date 
+      ? pet.lastMutationCheck 
+      : new Date(pet.lastMutationCheck);
     const hoursSinceLastCheck = (now.getTime() - lastCheck.getTime()) / (1000 * 60 * 60);
     
     // 每24小时最多一次突变检查

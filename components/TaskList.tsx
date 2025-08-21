@@ -103,18 +103,28 @@ export default function TaskList({ tasks, onTaskComplete }: TaskListProps) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    switch (task.completionMethod) {
-      case 'physical':
-        startPhysicalTask(task);
-        break;
-      case 'timer':
-        startTimerTask(task);
-        break;
-      case 'conversation':
-        setActiveTaskId(taskId);
-        break;
-      default:
-        handleTaskComplete(taskId);
+    // 调用GameService开始任务
+    const result = GameService.startTask(taskId);
+    if (result.success) {
+      // 更新本地状态
+      task.isStarted = true;
+      task.startedAt = new Date();
+      
+      switch (task.completionMethod) {
+        case 'physical':
+          startPhysicalTask(task);
+          break;
+        case 'timer':
+          startTimerTask(task);
+          break;
+        case 'conversation':
+          setActiveTaskId(taskId);
+          break;
+        default:
+          handleTaskComplete(taskId);
+      }
+    } else {
+      alert(result.message);
     }
   };
 
