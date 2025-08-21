@@ -13,10 +13,20 @@ AI宠物冒险是一个基于Next.js的交互式宠物养成游戏，使用AI对
 ## 当前部署状态
 - **生产环境**: https://ai-pet-adventure-13nmek7v2-freedomztm-7943s-projects.vercel.app
 - **GitHub仓库**: https://github.com/frankzhi/ai-pet-adventure.git
-- **最后部署时间**: 2025-08-20 17:32:59 UTC
-- **最后提交**: de1e73a - 优化布局优先级和位置：对话互动更重要，调整位置避免遮挡，移除重复信息
+- **最后部署时间**: 2025-08-20 18:17:00 UTC
+- **最后提交**: 57ba610 - 修复关键错误：1.修复时间处理中的getTime错误；2.修复任务无法完成的问题，确保正确调用GameService.startTask
 
 ## 最近优化内容
+
+### 关键错误修复 (2025-08-20)
+- **问题**: 时间处理错误导致getTime is not a function，任务无法正常完成
+- **解决方案**: 
+  - 修复时间处理：确保所有时间字段正确转换为Date对象，避免getTime错误
+  - 修复任务完成逻辑：确保正确调用GameService.startTask，任务状态正确保存
+  - 修复突变检查：修复lastMutationCheck等时间字段的处理
+  - 修复随机事件：修复randomEvents中时间戳的处理
+  - 修复宠物活动：修复lastActivityUpdate等时间字段的处理
+  - 改善错误处理：添加任务开始的错误提示
 
 ### 布局优先级和位置优化 (2025-08-20)
 - **问题**: 对话互动重要性被低估，详细信息位置遮挡其他内容，存在重复信息
