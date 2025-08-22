@@ -20,6 +20,62 @@ export class GameService {
     }
   }
 
+  // 当突变值达到阈值（满值）时，清零并立即生成词条（70%负面）
+  private static async handleMutationOverflow(pet: Pet, gameState: GameState, source: 'dialogue' | 'task' | 'time' | 'random_event'): Promise<void> {
+    try {
+      if (pet.mutation < 100) return;
+
+      // 清空突变值为0，重新开始累积
+      pet.mutation = 0;
+
+      // 生成词条（70%概率为负面）
+      const isNegative = Math.random() < 0.7;
+      const entry = this.generateTraitEntry(pet, isNegative);
+      pet.mutations.push(entry.name);
+
+      // 根据词条效果，立即影响宠物状态（轻量效果，避免过强）
+      if (entry.effects?.moodDelta) pet.mood = Math.max(0, Math.min(100, pet.mood + entry.effects.moodDelta));
+      if (entry.effects?.energyDelta) pet.energy = Math.max(0, Math.min(100, pet.energy + entry.effects.energyDelta));
+      if (entry.effects?.healthDelta) pet.health = Math.max(0, Math.min(100, pet.health + entry.effects.healthDelta));
+
+      // 记录事件
+      gameState.activityLogs.push({
+        id: Date.now().toString() + '_mutation_overflow',
+        activity: `🧬 ${pet.name}的突变值已满，获得新词条：${entry.name}${isNegative ? '（负面）' : '（正面）'}`,
+        timestamp: new Date(),
+        type: 'event',
+        details: `${entry.description} | 来源：${source}`
+      });
+
+      // 更新故事
+      gameState.currentStory += `\n🧬 ${pet.name}经历显著变化，获得${isNegative ? '负面' : '正面'}词条「${entry.name}」。`;
+    } catch (error) {
+      console.error('处理突变溢出失败:', error);
+    }
+  }
+
+  // 生成词条，支持负面与正面两类
+  private static generateTraitEntry(pet: Pet, isNegative: boolean): { name: string; description: string; effects?: { moodDelta?: number; energyDelta?: number; healthDelta?: number }; tags: string[] } {
+    const negativeEntries = [
+      { name: '易怒', description: '更容易被激怒，互动中更敏感。', effects: { moodDelta: -8 }, tags: ['behavior', 'negative'] },
+      { name: '能量紊乱', description: '能量波动不稳，行动更易疲劳。', effects: { energyDelta: -10 }, tags: ['physical', 'negative'] },
+      { name: '脆弱', description: '防护力降低，更容易受伤。', effects: { healthDelta: -8 }, tags: ['physical', 'negative'] },
+      { name: '偏执', description: '对外界充满戒备，剧情分支更警惕。', effects: { moodDelta: -6 }, tags: ['behavior', 'negative'] },
+      { name: '交流迟缓', description: '反应变慢，对话中更迟疑。', effects: { energyDelta: -6 }, tags: ['cognitive', 'negative'] },
+    ];
+
+    const positiveEntries = [
+      { name: '冷静', description: '更加沉着冷静，决策更稳健。', effects: { moodDelta: +6 }, tags: ['behavior', 'positive'] },
+      { name: '体质强化', description: '恢复速度略有提升。', effects: { healthDelta: +8 }, tags: ['physical', 'positive'] },
+      { name: '精力充沛', description: '更有动力行动。', effects: { energyDelta: +8 }, tags: ['physical', 'positive'] },
+      { name: '灵感闪现', description: '更善于发现线索。', effects: { moodDelta: +4 }, tags: ['cognitive', 'positive'] },
+      { name: '社交直觉', description: '与他人互动更顺畅。', effects: { moodDelta: +5 }, tags: ['behavior', 'positive'] },
+    ];
+
+    const pool = isNegative ? negativeEntries : positiveEntries;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
   static loadGameState(): GameState | null {
     try {
       const savedState = localStorage.getItem(this.STORAGE_KEY);
@@ -455,6 +511,9 @@ export class GameService {
           console.error('生成特殊任务失败:', error);
         }
       }
+
+      // 突变溢出检查（对话造成的变化）
+      this.handleMutationOverflow(activePet, gameState, 'dialogue');
 
       // 保存游戏状态
       this.saveGameState(gameState);
@@ -1015,8 +1074,11 @@ export class GameService {
       // 突变值累积：健康、心情、能量越低，突变值增长越快（大幅增加累积速度）
       const mutationRate = (100 - pet.health) * 2 + (100 - pet.mood) * 1 + (100 - pet.energy) * 1;
       pet.mutation = Math.min(100, pet.mutation + hoursSinceLastUpdate * mutationRate);
-      
-      // 检查是否触发突变
+
+      // 突变溢出检查（时间累积）
+      await this.handleMutationOverflow(pet, gameState, 'time');
+
+      // 检查是否触发日常概率突变
       await this.checkForMutation(pet, gameState);
 
       // 更新心情状态
