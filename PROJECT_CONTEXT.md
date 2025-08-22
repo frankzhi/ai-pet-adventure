@@ -11,12 +11,21 @@ AI宠物冒险是一个基于Next.js的交互式宠物养成游戏，使用AI对
 - **代码仓库**: GitHub
 
 ## 当前部署状态
-- **生产环境**: https://ai-pet-adventure-13nmek7v2-freedomztm-7943s-projects.vercel.app
+- **生产环境**: https://ai-pet-adventure-qobjtk7rz-freedomztm-7943s-projects.vercel.app
 - **GitHub仓库**: https://github.com/frankzhi/ai-pet-adventure.git
-- **最后部署时间**: 2025-08-20 18:17:00 UTC
-- **最后提交**: 57ba610 - 修复关键错误：1.修复时间处理中的getTime错误；2.修复任务无法完成的问题，确保正确调用GameService.startTask
+- **最后部署时间**: 2025-08-22 07:41:33 UTC
+- **最后提交**: c640534 - 新增突变溢出系统：突变值满时立即清零并生成词条，70%概率负面词条影响宠物特性
 
 ## 最近优化内容
+
+### 突变溢出系统 (2025-08-22)
+- **功能**: 当突变值达到100时，立即清空为0并生成新词条
+- **词条生成**: 70%概率生成负面词条，30%概率生成正面词条
+- **词条效果**: 影响宠物的心情、能量、健康值，并改变其特性和行为
+- **负面词条**: 易怒、能量紊乱、脆弱、偏执、交流迟缓等
+- **正面词条**: 冷静、体质强化、精力充沛、灵感闪现、社交直觉等
+- **触发路径**: 对话互动、任务完成、时间累积、随机事件后都会检查突变溢出
+- **事件记录**: 突变溢出事件会记录到活动日志和故事中
 
 ### 关键错误修复 (2025-08-20)
 - **问题**: 时间处理错误导致getTime is not a function，任务无法正常完成
@@ -71,7 +80,7 @@ AI宠物冒险是一个基于Next.js的交互式宠物养成游戏，使用AI对
 │   ├── ChatInterface.tsx # 对话界面
 │   └── EventLog.tsx    # 事件日志
 ├── lib/                # 核心逻辑
-│   ├── game-service.ts # 游戏服务
+│   ├── game-service.ts # 游戏服务 (新增突变溢出系统)
 │   └── ai-service.ts   # AI服务
 ├── types/              # TypeScript类型定义
 └── app/                # Next.js应用路由
@@ -85,7 +94,7 @@ AI宠物冒险是一个基于Next.js的交互式宠物养成游戏，使用AI对
 
 ## 关键文件
 - `/Users/franktianmuzhi/ai-pet-adventure/components/PetGame.tsx` - 主UI布局
-- `/Users/franktianmuzhi/ai-pet-adventure/lib/game-service.ts` - 游戏逻辑
+- `/Users/franktianmuzhi/ai-pet-adventure/lib/game-service.ts` - 游戏逻辑 (新增突变溢出处理)
 - `/Users/franktianmuzhi/ai-pet-adventure/lib/ai-service.ts` - AI服务
 
 ## 下一步计划
@@ -93,9 +102,11 @@ AI宠物冒险是一个基于Next.js的交互式宠物养成游戏，使用AI对
 - 添加更多宠物类型和互动方式
 - 优化AI对话的响应速度和质量
 - 增加游戏统计和分析功能
+- 扩展突变词条系统，增加更多词条类型和效果
 
 ## 注意事项
 - 确保所有代码更改都同步到GitHub仓库
 - 部署前进行本地测试
 - 保持项目上下文文档的更新
 - 遵循标准化部署流程
+- 突变溢出系统会影响宠物的长期特性，需要平衡游戏性
